@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface CTASectionProps {
   className?: string;
 }
@@ -15,9 +17,11 @@ const CTASection: React.FC<CTASectionProps> = ({ className = "" }) => {
           Join thousands of egg farmers who are using our platform to streamline
           their operations
         </p>
-        <button className="bg-white text-emerald-600 hover:bg-gray-100 px-8 py-4 rounded-lg text-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-emerald-600">
-          Get Started for Free
-        </button>
+        <Link href="/signup">
+          <button className="bg-white text-emerald-600 hover:bg-gray-100 px-8 py-4 rounded-lg text-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-emerald-600">
+            Get Started for Free
+          </button>
+        </Link>
       </div>
     </section>
   );

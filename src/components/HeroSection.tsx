@@ -1,4 +1,5 @@
 import DashboardPreview from "./DashboardPreview";
+import Link from "next/link";
 
 interface HeroSectionProps {
   className?: string;
@@ -21,12 +22,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({ className = "" }) => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-                Sign In
-              </button>
-              <button className="border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-                Create Account
-              </button>
+              <Link href="/signin">
+                <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                  Sign In
+                </button>
+              </Link>
+              <Link href="/signup">
+                <button className="border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                  Create Account
+                </button>
+              </Link>
             </div>
           </div>
 

@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --input-text: #333333;
 }
 
 @theme inline {
@@ -16,6 +17,7 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --input-text: #ffffff;
   }
 }
 
@@ -23,4 +25,33 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Fix input text visibility with balanced styling */
+input {
+  color: #333333 !important; /* Dark gray instead of pure black */
+  font-weight: 500 !important; /* Medium weight instead of bold */
+  -webkit-text-fill-color: #333333 !important; /* For WebKit browsers */
+  opacity: 1 !important;
+}
+
+input::placeholder {
+  color: #9ca3af !important;
+  opacity: 0.7 !important;
+  font-weight: 400 !important;
+  -webkit-text-fill-color: #9ca3af !important;
+}
+
+input:focus {
+  color: #333333 !important;
+  -webkit-text-fill-color: #333333 !important;
+}
+
+/* Additional styles to ensure text is visible but not too strong */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+  -webkit-text-fill-color: #333333 !important;
+  transition: background-color 5000s ease-in-out 0s;
 }

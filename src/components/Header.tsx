@@ -1,3 +1,6 @@
+import React from "react";
+import Link from "next/link";
+
 interface HeaderProps {
   className?: string;
 }
@@ -10,9 +13,11 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
           {/* Logo */}
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold text-emerald-600">
-                🥚 EggTracker
-              </h1>
+              <Link href="/" className="hover:opacity-80 transition-opacity duration-200">
+                <h1 className="text-2xl font-bold text-emerald-600">
+                  🏡 Farm Home Life
+                </h1>
+              </Link>
             </div>
           </div>
 
@@ -40,12 +45,12 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
 
           {/* CTA Buttons */}
           <div className="flex items-center space-x-4">
-            <button className="text-emerald-600 hover:text-emerald-700 px-3 py-2 text-sm font-medium transition-colors duration-200">
+            <Link href="/signin" className="text-emerald-600 hover:text-emerald-700 px-3 py-2 text-sm font-medium transition-colors duration-200">
               Sign In
-            </button>
-            <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-              Get Started
-            </button>
+            </Link>
+            <Link href="/signup" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+              Sign Up
+            </Link>
           </div>
         </div>
       </div>

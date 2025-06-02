@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Egg Production Management System | EggTracker",
+  title: "Farm Management System | Farm Home Life",
   description:
-    "The complete solution for egg farmers to track production, manage sales, and grow their business. Features production tracking, customer management, and analytics.",
+    "The complete solution for farmers to manage their farm, track production, manage sales, and grow their business. Features production tracking, customer management, and analytics.",
 };
 
 export default function RootLayout({

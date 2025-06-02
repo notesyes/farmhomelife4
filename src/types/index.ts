@@ -22,6 +22,41 @@ export interface DashboardStats {
   };
 }
 
+export interface ProductionStatus {
+  fresh: number;
+  washed: number;
+  packed: number;
+  sold: number;
+}
+
+export interface QuickAction {
+  id: string;
+  label: string;
+  icon: string;
+  color: string;
+  onClick?: () => void;
+}
+
+export interface SalesSummary {
+  totalRevenue: number;
+  pendingOrders: number;
+}
+
+export interface SalesPerformance {
+  weeklyTotal: number;
+  monthlyTotal: number;
+  percentageChange: number;
+}
+
+export interface Transaction {
+  id: string;
+  date: string;
+  type: string;
+  customer: string;
+  quantity: number;
+  total: number;
+}
+
 export interface FeatureCard {
   id: string;
   title: string;
