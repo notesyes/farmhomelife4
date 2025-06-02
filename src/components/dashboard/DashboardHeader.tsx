@@ -1,6 +1,29 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
 const DashboardHeader: React.FC = () => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
       <div className="px-4 sm:px-6 lg:px-8">
@@ -40,8 +63,11 @@ const DashboardHeader: React.FC = () => {
             </button>
 
             {/* Profile dropdown */}
-            <div className="relative">
-              <button className="flex items-center space-x-2 focus:outline-none">
+            <div className="relative" ref={dropdownRef}>
+              <button 
+                className="flex items-center space-x-2 focus:outline-none"
+                onClick={toggleDropdown}
+              >
                 <img
                   className="h-8 w-8 rounded-full"
                   src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
@@ -52,6 +78,22 @@ const DashboardHeader: React.FC = () => {
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </button>
+              
+              {/* Dropdown menu */}
+              {isDropdownOpen && (
+                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-10">
+                  <Link href="/dashboard/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Your Profile
+                  </Link>
+                  <Link href="/dashboard/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Settings
+                  </Link>
+                  <div className="border-t border-gray-100"></div>
+                  <Link href="/" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    Sign out
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
