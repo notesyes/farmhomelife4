@@ -1,0 +1,60 @@
+// TypeScript interfaces for the Egg Production Management System
+
+export interface DashboardStats {
+  totalProduction: {
+    value: number;
+    label: string;
+    unit: string;
+  };
+  monthlySales: {
+    value: number;
+    label: string;
+    unit: string;
+  };
+  customers: {
+    value: number;
+    label: string;
+  };
+  inventory: {
+    value: number;
+    label: string;
+    unit: string;
+  };
+}
+
+export interface FeatureCard {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  features: string[];
+  isBeta?: boolean;
+}
+
+export interface Testimonial {
+  id: string;
+  rating: number;
+  quote: string;
+  author: {
+    name: string;
+    company: string;
+    farmSize: string;
+  };
+}
+
+export interface StatCardProps {
+  value: number | string;
+  label: string;
+  unit?: string;
+  className?: string;
+}
+
+export interface FeatureCardProps {
+  feature: FeatureCard;
+  className?: string;
+}
+
+export interface TestimonialCardProps {
+  testimonial: Testimonial;
+  className?: string;
+}
