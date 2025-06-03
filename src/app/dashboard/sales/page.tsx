@@ -10,6 +10,9 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 type Customer = {
   id: string;
   name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
 };
 
 type EggProduction = {
@@ -30,6 +33,8 @@ type Sale = {
   pickupMethod: string;
   paymentMethod: string;
   paymentStatus: string;
+  pickupDate?: string;
+  pickupTime?: string;
   notes: string;
 };
 
@@ -38,7 +43,7 @@ export default function SalesPage() {
   const customerIdFilter = searchParams.get('customerId');
 
   // Mock data for customers
-  const [customers] = useState<Customer[]>([
+  const [customers, setCustomers] = useState<Customer[]>([
     { id: "1", name: "juan" },
     { id: "2", name: "jane" },
     { id: "3", name: "bob" },
@@ -85,11 +90,22 @@ export default function SalesPage() {
     pickupMethod: "Pickup in Person",
     paymentMethod: "Cash",
     paymentStatus: "Paid",
+    pickupDate: new Date().toISOString().split('T')[0],
+    pickupTime: "",
     notes: ""
   });
 
   // State for current month filter
   const [showCurrentMonthOnly, setShowCurrentMonthOnly] = useState(true);
+  
+  // State for new customer modal
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: ""
+  });
   
   // Calculate sales summary
   const [salesSummary, setSalesSummary] = useState({
@@ -188,6 +204,8 @@ export default function SalesPage() {
       pickupMethod: newSale.pickupMethod,
       paymentMethod: newSale.paymentMethod,
       paymentStatus: newSale.paymentStatus,
+      pickupDate: newSale.pickupDate,
+      pickupTime: newSale.pickupTime,
       notes: newSale.notes
     };
     
@@ -203,6 +221,8 @@ export default function SalesPage() {
       pickupMethod: "Pickup in Person",
       paymentMethod: "Cash",
       paymentStatus: "Paid",
+      pickupDate: new Date().toISOString().split('T')[0],
+      pickupTime: "",
       notes: ""
     });
   };
@@ -218,6 +238,28 @@ export default function SalesPage() {
       setSales(sales.filter(sale => sale.id !== id));
     }
   };
+  
+  // Handle marking a 'Will Pick Up' sale as 'Paid'
+  const handleMarkAsPaid = (id: string) => {
+    setSales(sales.map(sale => {
+      if (sale.id === id) {
+        return { ...sale, paymentStatus: 'Paid' };
+      }
+      return sale;
+    }));
+  };
+  
+  // Check if pickup time has passed for a sale
+  const isPickupTimePassed = (sale: Sale) => {
+    if (sale.paymentStatus !== 'Will Pick Up' || !sale.pickupDate || !sale.pickupTime) {
+      return false;
+    }
+    
+    const now = new Date();
+    const pickupDateTime = new Date(`${sale.pickupDate}T${sale.pickupTime}`);
+    
+    return now > pickupDateTime;
+  };
 
   // Handle adding a new egg production record
   const handleAddEggProduction = () => {
@@ -226,6 +268,61 @@ export default function SalesPage() {
       const newId = (eggProductions.length + 1).toString();
       setEggProductions([...eggProductions, { id: newId, name }]);
     }
+  };
+
+  // Handle opening the new customer modal
+  const handleOpenCustomerModal = () => {
+    setNewCustomer({
+      name: "",
+      email: "",
+      phone: "",
+      address: ""
+    });
+    setShowCustomerModal(true);
+  };
+  
+  // Handle closing the new customer modal
+  const handleCloseCustomerModal = () => {
+    setShowCustomerModal(false);
+  };
+  
+  // Handle input change for new customer form
+  const handleCustomerInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewCustomer(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  // Handle adding a new customer
+  const handleAddCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newCustomer.name.trim() === "") {
+      alert("Please enter a customer name");
+      return;
+    }
+    
+    const newId = (customers.length + 1).toString();
+    const customerToAdd = { 
+      id: newId, 
+      name: newCustomer.name,
+      email: newCustomer.email,
+      phone: newCustomer.phone,
+      address: newCustomer.address
+    };
+    
+    setCustomers([...customers, customerToAdd]);
+    
+    // Select the new customer in the form
+    setNewSale(prev => ({
+      ...prev,
+      customerId: newId
+    }));
+    
+    // Close the modal
+    setShowCustomerModal(false);
   };
 
   // Get customer name for filter display
@@ -270,16 +367,17 @@ export default function SalesPage() {
 
             {/* Add New Sale Form */}
             <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-amber-900">Add New Sale</h2>
+              <div className="p-5 border-b border-gray-200 bg-amber-100">
+                <h2 className="text-2xl font-bold text-amber-900">Add New Sale</h2>
+                <p className="text-amber-700 mt-1">Fill out the form below to record a new sale</p>
               </div>
-              <div className="p-4">
-                <form onSubmit={handleAddSale} className="space-y-4">
+              <div className="p-6 bg-amber-50">
+                <form onSubmit={handleAddSale} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Sale Date */}
                     <div>
-                      <label htmlFor="date" className="block text-sm font-medium text-amber-700 mb-1">
-                        Sale Date
+                      <label htmlFor="date" className="block text-base font-semibold text-amber-800 mb-2">
+                        Sale Date <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="date"
@@ -287,43 +385,55 @@ export default function SalesPage() {
                         name="date"
                         value={newSale.date}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
                       />
                     </div>
 
                     {/* Customer */}
-                    <div>
-                      <label htmlFor="customerId" className="block text-sm font-medium text-amber-700 mb-1">
-                        Customer
-                      </label>
-                      <select
-                        id="customerId"
-                        name="customerId"
-                        value={newSale.customerId}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    <div className="flex items-end space-x-2">
+                      <div className="flex-1">
+                        <label htmlFor="customerId" className="block text-base font-semibold text-amber-800 mb-2">
+                          Customer <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          id="customerId"
+                          name="customerId"
+                          value={newSale.customerId}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
+                        >
+                          <option value="">Select Customer</option>
+                          {customers.map((customer) => (
+                            <option key={customer.id} value={customer.id}>
+                              {customer.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleOpenCustomerModal}
+                        className="px-3 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors"
+                        title="Add New Customer"
                       >
-                        <option value="">Select Customer</option>
-                        {customers.map((customer) => (
-                          <option key={customer.id} value={customer.id}>
-                            {customer.name}
-                          </option>
-                        ))}
-                      </select>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                      </button>
                     </div>
 
                     {/* Egg Production Record */}
                     <div className="flex items-end space-x-2">
                       <div className="flex-1">
-                        <label htmlFor="eggProductionId" className="block text-sm font-medium text-amber-700 mb-1">
-                          Egg Production Record
+                        <label htmlFor="eggProductionId" className="block text-base font-semibold text-amber-800 mb-2">
+                          Egg Production Record <span className="text-red-500">*</span>
                         </label>
                         <select
                           id="eggProductionId"
                           name="eggProductionId"
                           value={newSale.eggProductionId}
                           onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
                         >
                           <option value="">Select Egg Production</option>
                           {eggProductions.map((production) => (
@@ -344,8 +454,8 @@ export default function SalesPage() {
 
                     {/* Price Per Dozen */}
                     <div>
-                      <label htmlFor="pricePerDozen" className="block text-sm font-medium text-amber-700 mb-1">
-                        Price Per Dozen
+                      <label htmlFor="pricePerDozen" className="block text-base font-semibold text-amber-800 mb-2">
+                        Price Per Dozen <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
@@ -355,14 +465,14 @@ export default function SalesPage() {
                         onChange={handleInputChange}
                         min="0"
                         step="0.01"
-                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
                       />
                     </div>
 
                     {/* Dozens Purchased */}
                     <div>
-                      <label htmlFor="dozens" className="block text-sm font-medium text-amber-700 mb-1">
-                        Dozens Purchased
+                      <label htmlFor="dozens" className="block text-base font-semibold text-amber-800 mb-2">
+                        Dozens Purchased <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="number"
@@ -372,21 +482,21 @@ export default function SalesPage() {
                         onChange={handleInputChange}
                         min="0"
                         step="0.5"
-                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
                       />
                     </div>
 
                     {/* Pickup Method */}
                     <div>
-                      <label htmlFor="pickupMethod" className="block text-sm font-medium text-amber-700 mb-1">
-                        Pickup Method
+                      <label htmlFor="pickupMethod" className="block text-base font-semibold text-amber-800 mb-2">
+                        Pickup Method <span className="text-red-500">*</span>
                       </label>
                       <select
                         id="pickupMethod"
                         name="pickupMethod"
                         value={newSale.pickupMethod}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
                       >
                         <option value="Pickup in Person">Pickup in Person</option>
                         <option value="Delivery">Delivery</option>
@@ -396,46 +506,81 @@ export default function SalesPage() {
 
                     {/* Payment Method */}
                     <div>
-                      <label htmlFor="paymentMethod" className="block text-sm font-medium text-amber-700 mb-1">
-                        Payment Method
+                      <label htmlFor="paymentMethod" className="block text-base font-semibold text-amber-800 mb-2">
+                        Payment Method <span className="text-red-500">*</span>
                       </label>
                       <select
                         id="paymentMethod"
                         name="paymentMethod"
                         value={newSale.paymentMethod}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
                       >
                         <option value="Cash">Cash</option>
                         <option value="Credit Card">Credit Card</option>
                         <option value="Venmo">Venmo</option>
                         <option value="PayPal">PayPal</option>
+                        <option value="Zelle">Zelle</option>
+                        <option value="ACH">ACH</option>
                         <option value="Check">Check</option>
                       </select>
                     </div>
 
                     {/* Payment Status */}
                     <div>
-                      <label htmlFor="paymentStatus" className="block text-sm font-medium text-amber-700 mb-1">
-                        Payment Status
+                      <label htmlFor="paymentStatus" className="block text-base font-semibold text-amber-800 mb-2">
+                        Payment Status <span className="text-red-500">*</span>
                       </label>
                       <select
                         id="paymentStatus"
                         name="paymentStatus"
                         value={newSale.paymentStatus}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
                       >
                         <option value="Paid">Paid</option>
                         <option value="Pending">Pending</option>
+                        <option value="Will Pick Up">Will Pick Up</option>
                         <option value="Cancelled">Cancelled</option>
                       </select>
                     </div>
+                    
+                    {/* Conditional Pickup Date and Time fields */}
+                    {newSale.paymentStatus === "Will Pick Up" && (
+                      <>
+                        <div>
+                          <label htmlFor="pickupDate" className="block text-base font-semibold text-amber-800 mb-2">
+                            Pickup Date <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="date"
+                            id="pickupDate"
+                            name="pickupDate"
+                            value={newSale.pickupDate}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="pickupTime" className="block text-base font-semibold text-amber-800 mb-2">
+                            Pickup Time <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="time"
+                            id="pickupTime"
+                            name="pickupTime"
+                            value={newSale.pickupTime}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Notes */}
                   <div>
-                    <label htmlFor="notes" className="block text-sm font-medium text-amber-700 mb-1">
+                    <label htmlFor="notes" className="block text-base font-semibold text-amber-800 mb-2">
                       Notes (Optional)
                     </label>
                     <textarea
@@ -444,7 +589,7 @@ export default function SalesPage() {
                       value={newSale.notes}
                       onChange={handleInputChange}
                       rows={3}
-                      className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-4 py-3 border-2 border-amber-400 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-amber-50 text-amber-900 font-medium shadow-sm"
                       placeholder="Enter any notes about this sale (optional)"
                     />
                   </div>
@@ -501,6 +646,9 @@ export default function SalesPage() {
                         Total
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -524,7 +672,42 @@ export default function SalesPage() {
                           ${sale.total.toFixed(2)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center ${sale.paymentStatus === 'Paid' ? 'bg-green-100 text-green-800' : sale.paymentStatus === 'Will Pick Up' ? 'bg-blue-100 text-blue-800' : sale.paymentStatus === 'Cancelled' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                            <span className="flex items-center">
+                              {sale.paymentStatus === 'Paid' && (
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                              {sale.paymentStatus === 'Will Pick Up' && (
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              )}
+                              {sale.paymentStatus}
+                            </span>
+                          </div>
+                          {sale.paymentStatus === 'Will Pick Up' && (
+                            <div className="mt-1 text-xs text-gray-500">
+                              {sale.pickupDate} at {sale.pickupTime}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <div className="flex space-x-2">
+                            {sale.paymentStatus === 'Will Pick Up' && isPickupTimePassed(sale) && (
+                              <button 
+                                onClick={() => handleMarkAsPaid(sale.id)}
+                                className="px-3 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition-colors"
+                              >
+                                <span className="flex items-center">
+                                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  Mark as Paid
+                                </span>
+                              </button>
+                            )}
                             <button 
                               onClick={() => handleEditSale(sale.id)}
                               className="px-3 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors"
@@ -608,6 +791,104 @@ export default function SalesPage() {
               </div>
             )}
           </div>
+          
+          {/* New Customer Modal */}
+          {showCustomerModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold text-amber-900">Add New Customer</h3>
+                  <button
+                    onClick={handleCloseCustomerModal}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <form onSubmit={handleAddCustomer} className="space-y-4">
+                  {/* Customer Name */}
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-amber-700 mb-1">
+                      Customer Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={newCustomer.name}
+                      onChange={handleCustomerInputChange}
+                      className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      required
+                    />
+                  </div>
+                  
+                  {/* Customer Email */}
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-amber-700 mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={newCustomer.email}
+                      onChange={handleCustomerInputChange}
+                      className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  
+                  {/* Customer Phone */}
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-amber-700 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={newCustomer.phone}
+                      onChange={handleCustomerInputChange}
+                      className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  
+                  {/* Customer Address */}
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-medium text-amber-700 mb-1">
+                      Address
+                    </label>
+                    <textarea
+                      id="address"
+                      name="address"
+                      value={newCustomer.address}
+                      onChange={handleCustomerInputChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={handleCloseCustomerModal}
+                      className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                    >
+                      Add Customer
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

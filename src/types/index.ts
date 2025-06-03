@@ -93,3 +93,13 @@ export interface TestimonialCardProps {
   testimonial: Testimonial;
   className?: string;
 }
+
+export interface IncubationRecord {
+  id: string;
+  date: string;
+  eggCount: number;
+  startDate: string;
+  expectedHatchDate: string;
+  status: 'incubating' | 'hatched' | 'failed';
+  notes: string;
+}

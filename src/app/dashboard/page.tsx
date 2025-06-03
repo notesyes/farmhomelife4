@@ -12,6 +12,24 @@ import RecentActivityCard from "@/components/dashboard/RecentActivityCard";
 import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
 
 // Types for inventory and sales data
+type SpeciesType = "chicken" | "duck" | "quail" | "goose" | "turkey";
+
+type EggBatch = {
+  id: string;
+  name: string;
+  startDate: string;
+  expectedHatchDate: string;
+  eggCount: number;
+  speciesType: SpeciesType;
+  speciesVariety: string;
+  notes: string;
+  status: "incubating" | "hatched" | "failed";
+  temperature: number;
+  humidity: number;
+  lastTurned: string;
+  lastCandled: string;
+};
+
 type InventoryRecord = {
   id: string;
   date: string;
@@ -46,66 +64,141 @@ export default function DashboardPage() {
   // State for export loading
   const [isExporting, setIsExporting] = useState(false);
   
-  // State for inventory and sales data
-  const [inventoryRecords] = useState<InventoryRecord[]>([
-    {
-      id: "rec1",
-      date: new Date().toISOString().split("T")[0],
-      eggCount: 50,
-      pickupTime: "15:37",
-      pickupMethod: "Evening Collection",
-      incubated: 25,
-      broken: 5,
-      weather: "cloudy",
-      notes: "Mixed sizes, some soft shells"
-    }
-  ]);
+  // State for inventory, sales, and incubation data
+  const [inventoryRecords, setInventoryRecords] = useState<InventoryRecord[]>([]);
+  const [salesRecords, setSalesRecords] = useState<Sale[]>([]);
+  const [incubationBatches, setIncubationBatches] = useState<EggBatch[]>([]);
   
-  const [salesRecords] = useState<Sale[]>([
-    { 
-      id: "1", 
-      date: new Date().toISOString().split('T')[0], 
-      customerId: "4", 
-      customerName: "michael", 
-      eggProductionId: "1",
-      eggProductionName: "Free Range Eggs",
-      dozens: 1.5, 
-      pricePerDozen: 6.00, 
-      total: 9.00,
-      pickupMethod: "Pickup in Person",
-      paymentMethod: "Cash",
-      paymentStatus: "Paid",
-      notes: ""
+  // Load inventory, sales, and incubation data from localStorage
+  useEffect(() => {
+    // Load inventory records
+    try {
+      const savedInventory = localStorage.getItem('inventoryRecords');
+      if (savedInventory) {
+        setInventoryRecords(JSON.parse(savedInventory));
+      } else {
+        // Default data if nothing is saved
+        const defaultInventory = [
+          {
+            id: "rec1",
+            date: new Date().toISOString().split("T")[0],
+            eggCount: 50,
+            pickupTime: "15:37",
+            pickupMethod: "Evening Collection",
+            incubated: 25,
+            broken: 5,
+            weather: "cloudy",
+            notes: "Mixed sizes, some soft shells"
+          }
+        ];
+        setInventoryRecords(defaultInventory);
+        localStorage.setItem('inventoryRecords', JSON.stringify(defaultInventory));
+      }
+      
+      // Load sales records
+      const savedSales = localStorage.getItem('salesRecords');
+      if (savedSales) {
+        setSalesRecords(JSON.parse(savedSales));
+      } else {
+        // Default data if nothing is saved
+        const defaultSales = [
+          { 
+            id: "1", 
+            date: new Date().toISOString().split('T')[0], 
+            customerId: "4", 
+            customerName: "michael", 
+            eggProductionId: "1",
+            eggProductionName: "Free Range Eggs",
+            dozens: 1.5, 
+            pricePerDozen: 6.00, 
+            total: 9.00,
+            pickupMethod: "Pickup in Person",
+            paymentMethod: "Cash",
+            paymentStatus: "Paid",
+            notes: ""
+          }
+        ];
+        setSalesRecords(defaultSales);
+        localStorage.setItem('salesRecords', JSON.stringify(defaultSales));
+      }
+      
+      // Load incubation batches
+      const savedIncubation = localStorage.getItem('incubationBatches');
+      if (savedIncubation) {
+        setIncubationBatches(JSON.parse(savedIncubation));
+      } else {
+        // We don't set default incubation data, as it's managed on the incubation page
+        // This just ensures we have the state initialized
+      }
+    } catch (error) {
+      console.error("Error loading data from localStorage:", error);
     }
-  ]);
+  }, []);
+  
+  // Set up event listeners for storage changes
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'inventoryRecords' && e.newValue) {
+        setInventoryRecords(JSON.parse(e.newValue));
+      } else if (e.key === 'salesRecords' && e.newValue) {
+        setSalesRecords(JSON.parse(e.newValue));
+      } else if (e.key === 'incubationBatches' && e.newValue) {
+        setIncubationBatches(JSON.parse(e.newValue));
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   
   // Stats for dashboard
   const [dashboardStats, setDashboardStats] = useState({
     dailyProduction: 0,
     eggsRejected: 0,
+    eggsIncubated: 0,
     dailyRevenue: 0,
     feedUsed: 0,
-    productionTrend: "",
-    rejectionTrend: "",
-    revenueTrend: "",
-    feedTrend: ""
+    productionTrend: "+0.0%",
+    rejectionTrend: "-0.0%",
+    incubationTrend: "+0.0%",
+    revenueTrend: "+0.0%",
+    feedTrend: "-0.0%"
   });
   
-  // Calculate dashboard stats based on inventory and sales data
+  // Calculate dashboard stats based on inventory, sales, and incubation data
   useEffect(() => {
     // Get today's date in ISO format (YYYY-MM-DD)
     const today = new Date().toISOString().split('T')[0];
     
-    // Calculate total eggs collected today
+    // Calculate total eggs collected (all time and today)
     const todaysInventory = inventoryRecords.filter(record => record.date === today);
-    const totalEggsCollected = todaysInventory.reduce((sum, record) => sum + record.eggCount, 0);
+    const totalEggsCollectedToday = todaysInventory.reduce((sum, record) => sum + record.eggCount, 0);
     
-    // Calculate eggs sold today (convert dozens to individual eggs)
+    // Calculate total eggs collected (all time)
+    const totalEggsCollectedAllTime = inventoryRecords.reduce((sum, record) => sum + record.eggCount, 0);
+    
+    // Calculate eggs sold (all time and today)
     const todaysSales = salesRecords.filter(sale => sale.date === today);
-    const eggsInDozensSold = todaysSales.reduce((sum, sale) => sum + (sale.dozens * 12), 0);
+    // We only need all-time sold eggs for inventory calculation
+    const eggsInDozensSoldAllTime = salesRecords.reduce((sum, sale) => sum + (sale.dozens * 12), 0);
     
-    // Calculate eggs rejected (broken + incubated)
-    const eggsRejected = todaysInventory.reduce((sum, record) => sum + record.broken + record.incubated, 0);
+    // Calculate broken eggs (rejected)
+    const eggsBrokenToday = todaysInventory.reduce((sum, record) => sum + record.broken, 0);
+    const eggsBrokenAllTime = inventoryRecords.reduce((sum, record) => sum + record.broken, 0);
+    
+    // Calculate total eggs marked for incubation in inventory history (for reference)
+    // We'll use the actively incubating eggs for actual calculations
+    
+    // Calculate eggs that are actively incubating (only count eggs with 'incubating' status)
+    const activelyIncubatingEggs = incubationBatches
+      .filter(batch => batch.status === 'incubating')
+      .reduce((sum, batch) => sum + batch.eggCount, 0);
+    
+    // For today's incubation stats, we'll count new eggs added to incubation today
+    const eggsIncubatedToday = todaysInventory.reduce((sum, record) => sum + record.incubated, 0);
+    
+    // Calculate available eggs (total collected minus sold, broken, and actively incubating)
+    const availableEggs = totalEggsCollectedAllTime - eggsInDozensSoldAllTime - eggsBrokenAllTime - activelyIncubatingEggs;
     
     // Calculate daily revenue
     const dailyRevenue = todaysSales.reduce((sum, sale) => sum + sale.total, 0);
@@ -113,24 +206,60 @@ export default function DashboardPage() {
     // Calculate feed used (mock calculation - 0.25 lbs per chicken, assuming 12 chickens)
     const feedUsed = 3.0;  // This would be calculated from actual feed data
     
-    // Calculate trends (mock data for now)
-    // In a real app, you would compare with previous day/week
-    const productionTrend = "+5.2%";
-    const rejectionTrend = "-1.3%";
-    const revenueTrend = "+10.4%";
-    const feedTrend = "-0.8%";
+    // Calculate trends by comparing with previous day
+    // Get yesterday's date
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    // Calculate yesterday's stats
+    const yesterdayInventory = inventoryRecords.filter(record => record.date === yesterdayStr);
+    const yesterdayEggsCollected = yesterdayInventory.reduce((sum, record) => sum + record.eggCount, 0);
+    
+    const yesterdaySales = salesRecords.filter(sale => sale.date === yesterdayStr);
+    const yesterdayRevenue = yesterdaySales.reduce((sum, sale) => sum + sale.total, 0);
+    
+    const yesterdayBroken = yesterdayInventory.reduce((sum, record) => sum + record.broken, 0);
+    // Calculate yesterday's incubation data
+    const yesterdayIncubated = yesterdayInventory.reduce((sum, record) => sum + record.incubated, 0);
+    
+    // We already have yesterday's date calculated above
+    
+    // We can't easily get yesterday's active incubations from localStorage
+    // So we'll use the trend from inventory records
+    
+    // Calculate trends
+    const productionTrend = yesterdayEggsCollected > 0 
+      ? `${((totalEggsCollectedToday - yesterdayEggsCollected) / yesterdayEggsCollected * 100).toFixed(1)}%` 
+      : "+0.0%";
+      
+    const rejectionTrend = yesterdayBroken > 0 
+      ? `${((eggsBrokenToday - yesterdayBroken) / yesterdayBroken * 100).toFixed(1)}%` 
+      : "-0.0%";
+      
+    const incubationTrend = yesterdayIncubated > 0 
+      ? `${((eggsIncubatedToday - yesterdayIncubated) / yesterdayIncubated * 100).toFixed(1)}%` 
+      : "+0.0%";
+      
+    const revenueTrend = yesterdayRevenue > 0 
+      ? `${((dailyRevenue - yesterdayRevenue) / yesterdayRevenue * 100).toFixed(1)}%` 
+      : "+0.0%";
+      
+    const feedTrend = "-0.8%"; // Mock data for now
     
     setDashboardStats({
-      dailyProduction: totalEggsCollected - eggsInDozensSold,  // Eggs collected minus eggs sold
-      eggsRejected,
+      dailyProduction: availableEggs,  // Available eggs (all time collected minus sold, broken, and incubated)
+      eggsRejected: eggsBrokenToday,
+      eggsIncubated: eggsIncubatedToday,
       dailyRevenue,
       feedUsed,
-      productionTrend,
-      rejectionTrend,
-      revenueTrend,
+      productionTrend: productionTrend.startsWith("-") ? productionTrend : "+" + productionTrend,
+      rejectionTrend: rejectionTrend.startsWith("-") ? rejectionTrend : "+" + rejectionTrend,
+      incubationTrend: incubationTrend.startsWith("-") ? incubationTrend : "+" + incubationTrend,
+      revenueTrend: revenueTrend.startsWith("-") ? revenueTrend : "+" + revenueTrend,
       feedTrend
     });
-  }, [inventoryRecords, salesRecords]);
+  }, [inventoryRecords, salesRecords, incubationBatches]);
   
   // Format current date for display
   const currentDate = new Date().toLocaleDateString("en-US", {
@@ -250,16 +379,26 @@ export default function DashboardPage() {
                 unit="eggs"
                 trend={dashboardStats.productionTrend}
                 color="blue"
-                description="Available eggs after sales"
+                description="Total available eggs in inventory"
                 onClick={() => router.push('/dashboard/inventory')}
               />
               <DashboardStatCard 
                 value={dashboardStats.eggsRejected}
-                label="Eggs Rejected"
+                label="Broken Eggs"
                 trend={dashboardStats.rejectionTrend}
-                color="green"
-                description="Broken or incubated eggs"
+                color="red"
+                description="Damaged or unusable eggs"
                 onClick={() => router.push('/dashboard/inventory')}
+              />
+              <DashboardStatCard 
+                value={incubationBatches
+                  .filter(batch => batch.status === 'incubating')
+                  .reduce((sum, batch) => sum + batch.eggCount, 0)}
+                label="Incubating Eggs"
+                trend={dashboardStats.incubationTrend}
+                color="purple"
+                description="Eggs currently in incubators"
+                onClick={() => router.push('/dashboard/incubation')}
               />
               <DashboardStatCard 
                 value={dashboardStats.dailyRevenue}

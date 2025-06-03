@@ -12,9 +12,33 @@ import {
   Title, 
   Tooltip, 
   Legend,
-  BarElement
+  BarElement,
+  ChartType,
+  TooltipItem,
+  ChartData
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+
+// Define types for this component
+type InventoryRecord = {
+  id: string;
+  date: string;
+  eggCount: number;
+  pickupTime: string;
+  pickupMethod: string;
+  broken: number;
+  incubated: number;
+  weather: string;
+  notes: string;
+};
+
+type IncubationData = {
+  name: string;
+  eggCount: number;
+  speciesType: "chicken" | "duck" | "quail" | "goose" | "turkey";
+  speciesVariety: string;
+  notes: string;
+};
 
 // Register ChartJS components
 ChartJS.register(
@@ -28,18 +52,7 @@ ChartJS.register(
   Legend
 );
 
-// Types for inventory data
-type InventoryRecord = {
-  id: string;
-  date: string;
-  eggCount: number;
-  pickupTime: string;
-  pickupMethod: string;
-  incubated: number;
-  broken: number;
-  weather: string;
-  notes: string;
-};
+// Chart data type
 
 // Chart data type
 type ChartDataset = {
@@ -48,7 +61,7 @@ type ChartDataset = {
   backgroundColor: string;
   borderColor: string;
   borderWidth: number;
-  type?: 'bar';
+  type?: ChartType;
   tension?: number;
 };
 
@@ -59,7 +72,7 @@ type ChartDataType = {
 
 export default function InventoryPage() {
   // State for form data
-  const [formData, setFormData] = useState<Omit<InventoryRecord, "id">>({    
+  const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     eggCount: 0,
     pickupTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
@@ -70,15 +83,37 @@ export default function InventoryPage() {
     notes: ""
   });
   
-  // State for confirmation dialog
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  // State for delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<string | null>(null);
+  
+  // State for incubation modal
+  const [showIncubationModal, setShowIncubationModal] = useState(false);
+  const [recordForIncubation, setRecordForIncubation] = useState<InventoryRecord | null>(null);
+  const [incubationData, setIncubationData] = useState<IncubationData>({
+    name: "",
+    eggCount: 0,
+    speciesType: "chicken",
+    speciesVariety: "",
+    notes: ""
+  });
 
-  // State for records
-  const [records, setRecords] = useState<InventoryRecord[]>([
+  // State for inventory records
+  const initialFormState = {
+    date: new Date().toISOString().split('T')[0],
+    eggCount: 0,
+    pickupTime: '',
+    pickupMethod: '',
+    broken: 0,
+    incubated: 0,
+    weather: '',
+    notes: ''
+  };
+
+  const [inventoryRecords, setInventoryRecords] = useState<InventoryRecord[]>([
     {
       id: "rec1",
-      date: new Date().toISOString().split("T")[0],
+      date: new Date().toISOString().split('T')[0],
       eggCount: 50,
       pickupTime: "15:37",
       pickupMethod: "Evening Collection",
@@ -99,7 +134,6 @@ export default function InventoryPage() {
   // State for chart display
   const [chartType, setChartType] = useState<"7days" | "30days" | "weekly">("7days");
   const [chartData, setChartData] = useState<ChartDataType | null>(null);
-  const [dispositionChartData, setDispositionChartData] = useState<ChartDataType | null>(null);
 
   // Reset form function
   const resetForm = () => {
@@ -126,6 +160,38 @@ export default function InventoryPage() {
     });
   };
 
+  // Filter records based on search and filters
+  const getFilteredRecords = () => inventoryRecords.filter((record: InventoryRecord) => {
+    // Search term filter
+    const matchesSearch = searchTerm === "" || 
+      record.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.date.includes(searchTerm) ||
+      record.pickupMethod.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Method filter
+    const matchesMethod = methodFilter === "All Methods" || record.pickupMethod === methodFilter;
+    
+    // Time filter
+    let matchesTimeFilter = true;
+    const recordDate = new Date(record.date);
+    const today = new Date();
+    
+    if (timeFilter === "Last 7 days") {
+      const weekAgo = new Date();
+      weekAgo.setDate(today.getDate() - 7);
+      matchesTimeFilter = recordDate >= weekAgo;
+    } else if (timeFilter === "Last 30 days") {
+      const monthAgo = new Date();
+      monthAgo.setDate(today.getDate() - 30);
+      matchesTimeFilter = recordDate >= monthAgo;
+    } else if (timeFilter === "This month") {
+      matchesTimeFilter = recordDate.getMonth() === today.getMonth() && 
+                          recordDate.getFullYear() === today.getFullYear();
+    }
+    
+    return matchesSearch && matchesMethod && matchesTimeFilter;
+  });
+  
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +204,7 @@ export default function InventoryPage() {
     
     if (isEditing && editingId) {
       // Update existing record
-      const updatedRecords = records.map(record => {
+      const updatedRecords = inventoryRecords.map(record => {
         if (record.id === editingId) {
           return {
             ...record,
@@ -155,7 +221,7 @@ export default function InventoryPage() {
         return record;
       });
       
-      setRecords(updatedRecords);
+      setInventoryRecords(updatedRecords);
       setIsEditing(false);
     } else {
       // Add new record
@@ -163,94 +229,65 @@ export default function InventoryPage() {
         ...formData,
         id: `record-${Date.now()}`
       };
-      setRecords([...records, newRecord]);
+      setInventoryRecords([...inventoryRecords, newRecord]);
     }
     
     // Reset form
     resetForm();
   };
 
-  // This resetForm function has been moved above to fix the order of declarations
-
-  // Show delete confirmation dialog
-  const showDeleteConfirmation = useCallback((id: string) => {
+  // Handle delete button click
+  const handleDelete = (id: string) => {
+    // Show confirmation modal instead of using window.confirm
     setRecordToDelete(id);
-    setShowConfirmDialog(true);
-  }, []);
-  
-  // Handle record deletion
-  const handleDelete = useCallback((id: string) => {
-    try {
-      console.log("Deleting record with ID:", id);
-      
-      // Update records state by filtering out the deleted record
-      setRecords(prevRecords => prevRecords.filter(record => record.id !== id));
-      
-      // If deleting the record being edited, reset the form
-      if (editingId === id) {
-        resetForm();
-      }
-      
-      // Show success message
-      const successMessage = document.getElementById('success-message');
-      if (successMessage) {
-        successMessage.textContent = 'Record deleted successfully!';
-        successMessage.classList.remove('hidden');
-        setTimeout(() => {
-          successMessage.classList.add('hidden');
-        }, 3000);
-      }
-    } catch (error) {
-      console.error("Error deleting record:", error);
-      
-      // Show error message
-      const errorMessage = document.getElementById('error-message');
-      if (errorMessage) {
-        errorMessage.textContent = 'There was an error deleting the record. Please try again.';
-        errorMessage.classList.remove('hidden');
-        setTimeout(() => {
-          errorMessage.classList.add('hidden');
-        }, 3000);
-      }
-    } finally {
-      // Close the confirmation dialog
-      setShowConfirmDialog(false);
-      setRecordToDelete(null);
-    }
-  }, [editingId]);  // resetForm is defined in the component scope, so no need to add it as a dependency
-  
-  // Handle record editing
-  const handleEdit = (id: string) => {
-    const recordToEdit = records.find(record => record.id === id);
-    if (recordToEdit) {
-      setFormData({
-        date: recordToEdit.date,
-        eggCount: recordToEdit.eggCount,
-        pickupTime: recordToEdit.pickupTime,
-        pickupMethod: recordToEdit.pickupMethod,
-        incubated: recordToEdit.incubated,
-        broken: recordToEdit.broken,
-        weather: recordToEdit.weather,
-        notes: recordToEdit.notes
-      });
-      setEditingId(id);
-      setIsEditing(true);
-      
-      // Scroll to form and focus on first input
-      const formElement = document.getElementById("egg-form");
-      if (formElement) {
-        formElement.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
+    setShowDeleteModal(true);
   };
   
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    resetForm();
+  // Handle incubate button click
+  const handleIncubate = (record: InventoryRecord) => {
+    if (record.incubated <= 0) {
+      alert("No eggs marked for incubation in this record.");
+      return;
+    }
+    
+    setRecordForIncubation(record);
+    setIncubationData({
+      name: `Batch from ${record.date}`,
+      eggCount: record.incubated,
+      speciesType: "chicken",
+      speciesVariety: "",
+      notes: ""
+    });
+    setShowIncubationModal(true);
+  };
+
+  // Handle confirm delete
+  const handleConfirmDelete = () => {
+    if (!recordToDelete) return;
+    
+    try {
+      // Filter out the record to delete
+      const updatedRecords = inventoryRecords.filter(record => record.id !== recordToDelete);
+      setInventoryRecords(updatedRecords);
+      
+      // Save to localStorage
+      localStorage.setItem('inventoryRecords', JSON.stringify(updatedRecords));
+      
+      // Close modal
+      setShowDeleteModal(false);
+      setRecordToDelete(null);
+      
+      // Show success message
+      showSuccessMessage('Record deleted successfully!');
+    } catch (error) {
+      console.error("Error deleting record:", error);
+      setShowDeleteModal(false);
+      setRecordToDelete(null);
+    }
   };
 
   // Calculate statistics
-  const thisWeekRecords = records.filter(record => {
+  const thisWeekRecords = inventoryRecords.filter((record: InventoryRecord) => {
     const recordDate = new Date(record.date);
     const today = new Date();
     const weekAgo = new Date();
@@ -258,12 +295,12 @@ export default function InventoryPage() {
     return recordDate >= weekAgo && recordDate <= today;
   });
 
-  const totalThisWeek = thisWeekRecords.reduce((sum, record) => sum + record.eggCount, 0);
+  const totalThisWeek = thisWeekRecords.reduce((sum: number, record: InventoryRecord) => sum + record.eggCount, 0);
   const dailyAverage = thisWeekRecords.length > 0 ? (totalThisWeek / thisWeekRecords.length).toFixed(1) : "0";
-  const brokenThisWeek = thisWeekRecords.reduce((sum, record) => sum + record.broken, 0);
+  const brokenThisWeek = thisWeekRecords.reduce((sum: number, record: InventoryRecord) => sum + record.broken, 0);
 
   // Calculate trend vs last week
-  const lastWeekRecords = records.filter(record => {
+  const lastWeekRecords = inventoryRecords.filter((record: InventoryRecord) => {
     const recordDate = new Date(record.date);
     const weekAgo = new Date();
     const twoWeeksAgo = new Date();
@@ -272,432 +309,399 @@ export default function InventoryPage() {
     return recordDate >= twoWeeksAgo && recordDate < weekAgo;
   });
 
-  const totalLastWeek = lastWeekRecords.reduce((sum, record) => sum + record.eggCount, 0);
-
-  // Prepare chart data for production trends
-  const prepareChartData = useCallback(() => {
-    // Sort records by date
-    const sortedRecords = [...records].sort((a, b) => {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
-
-    // Filter records based on chart type
-    let filteredRecords;
-    let dateFormat;
-
-    if (chartType === "7days") {
-      const last7Days = new Date();
-      last7Days.setDate(last7Days.getDate() - 7);
-      
-      filteredRecords = sortedRecords.filter(record => {
-        const recordDate = new Date(record.date);
-        return recordDate >= last7Days;
-      });
-      dateFormat = { month: 'short' as const, day: 'numeric' as const };
-    } else if (chartType === "30days") {
-      const last30Days = new Date();
-      last30Days.setDate(last30Days.getDate() - 30);
-      
-      filteredRecords = sortedRecords.filter(record => {
-        const recordDate = new Date(record.date);
-        return recordDate >= last30Days;
-      });
-      dateFormat = { month: 'short' as const, day: 'numeric' as const };
-    } else {
-      // Weekly aggregation
-      // This is a simplified implementation
-      filteredRecords = sortedRecords.slice(-28); // Last 4 weeks of data
-      dateFormat = { month: 'short' as const, day: 'numeric' as const };
+  const totalLastWeek = lastWeekRecords.reduce((sum: number, record: InventoryRecord) => sum + record.eggCount, 0);
+  const trend = totalLastWeek > 0 
+    ? Math.round(((totalThisWeek - totalLastWeek) / totalLastWeek) * 100) 
+    : 0;
+  const trendDirection = trend >= 0 ? "up" : "down";
+  
+  // Handle confirm incubation
+  const handleConfirmIncubation = () => {
+    if (!recordForIncubation || incubationData.eggCount <= 0 || !incubationData.speciesVariety) {
+      alert("Please fill out all required fields");
+      return;
     }
-
-    // Group by date
-    const eggsByDate: {[key: string]: number} = {};
     
-    filteredRecords.forEach(record => {
-      const date = record.date;
-      if (!eggsByDate[date]) {
-        eggsByDate[date] = 0;
-      }
-      eggsByDate[date] += record.eggCount;
-    });
-
-    // Prepare chart data
-    const labels = Object.keys(eggsByDate).sort((a, b) => {
-      return new Date(a).getTime() - new Date(b).getTime();
-    });
-
-    const formattedLabels = labels.map(date => {
-      const d = new Date(date);
-      return d.toLocaleDateString('en-US', dateFormat as Intl.DateTimeFormatOptions);
-    });
-
-    const data = labels.map(date => eggsByDate[date]);
-
+    try {
+      // Create a new incubation batch
+      const today = new Date();
+      const speciesInfo: Record<string, {incubationDays: number, temperature: number, humidity: number}> = {
+        chicken: { incubationDays: 21, temperature: 99.5, humidity: 55 },
+        duck: { incubationDays: 28, temperature: 99.3, humidity: 65 },
+        quail: { incubationDays: 18, temperature: 99.5, humidity: 50 },
+        goose: { incubationDays: 30, temperature: 99.0, humidity: 65 },
+        turkey: { incubationDays: 28, temperature: 99.5, humidity: 60 }
+      };
+      
+      const startDate = today.toISOString().split('T')[0];
+      const hatchDate = new Date(today);
+      hatchDate.setDate(today.getDate() + speciesInfo[incubationData.speciesType].incubationDays);
+      
+      const newBatch = {
+        id: `batch-${Date.now()}`,
+        batchName: incubationData.name,
+        startDate: startDate,
+        expectedHatchDate: hatchDate.toISOString().split('T')[0],
+        eggCount: incubationData.eggCount,
+        speciesType: incubationData.speciesType,
+        speciesVariety: incubationData.speciesVariety,
+        notes: incubationData.notes,
+        status: "incubating" as "incubating" | "hatched" | "failed",
+        temperature: speciesInfo[incubationData.speciesType].temperature,
+        humidity: speciesInfo[incubationData.speciesType].humidity,
+        lastTurned: startDate,
+        lastCandled: ""
+      };
+      
+      // Get existing batches or initialize empty array
+      const existingBatches = localStorage.getItem('incubationBatches');
+      const batches = existingBatches ? JSON.parse(existingBatches) : [];
+      
+      // Add new batch
+      batches.push(newBatch);
+      localStorage.setItem('incubationBatches', JSON.stringify(batches));
+      
+      // Close modal
+      setShowIncubationModal(false);
+      setRecordForIncubation(null);
+      setIncubationData({
+        name: "",
+        eggCount: 0,
+        speciesType: "chicken",
+        speciesVariety: "",
+        notes: ""
+      });
+      
+      // Show success message
+      showSuccessMessage('Eggs successfully added to incubation!');
+    } catch (error) {
+      console.error("Error adding to incubation:", error);
+      setShowIncubationModal(false);
+      setRecordForIncubation(null);
+    }
+  };
+  
+  // Function to prepare chart data based on the selected chart type
+  const prepareChartData = useCallback((): ChartDataType | null => {
+    if (inventoryRecords.length === 0) return null;
+    
+    let labels: string[] = [];
+    let data: number[] = [];
+    
+    if (chartType === '7days') {
+      // Get data for last 7 days
+      const last7Days = [...Array(7)].map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toISOString().split('T')[0];
+      }).reverse();
+      
+      labels = last7Days.map(date => {
+        const d = new Date(date);
+        return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      });
+      
+      data = last7Days.map(date => {
+        const dayRecords = inventoryRecords.filter(r => r.date === date);
+        return dayRecords.reduce((sum, r) => sum + r.eggCount, 0);
+      });
+    } else if (chartType === '30days') {
+      // Get data for last 30 days with 7-day moving average
+      const last30Days = [...Array(30)].map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toISOString().split('T')[0];
+      }).reverse();
+      
+      labels = last30Days.map(date => {
+        const d = new Date(date);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      });
+      
+      const dailyData = last30Days.map(date => {
+        const dayRecords = inventoryRecords.filter(r => r.date === date);
+        return dayRecords.reduce((sum, r) => sum + r.eggCount, 0);
+      });
+      
+      // Calculate 7-day moving average
+      data = dailyData.map((_, i) => {
+        if (i < 6) return 0; // Not enough data for 7-day average yet
+        const weekSum = dailyData.slice(i-6, i+1).reduce((sum, val) => sum + val, 0);
+        return Math.round(weekSum / 7);
+      });
+    } else { // Weekly
+      // Get data for last 12 weeks
+      const weeks: {[key: string]: number} = {};
+      
+      inventoryRecords.forEach(record => {
+        const date = new Date(record.date);
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay()); // Set to Sunday
+        const weekKey = weekStart.toISOString().split('T')[0];
+        
+        if (!weeks[weekKey]) weeks[weekKey] = 0;
+        weeks[weekKey] += record.eggCount;
+      });
+      
+      // Sort weeks and take last 12
+      const sortedWeeks = Object.entries(weeks)
+        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
+        .slice(-12);
+      
+      labels = sortedWeeks.map(([week]) => {
+        const d = new Date(week);
+        return `Week of ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+      });
+      
+      data = sortedWeeks.map(([_, count]) => count);
+    }
+    
     return {
-      labels: formattedLabels,
+      labels,
       datasets: [
         {
           label: 'Egg Production',
-          data: data,
-          backgroundColor: 'rgba(16, 185, 129, 0.5)', // emerald-500 with opacity
-          borderColor: 'rgb(16, 185, 129)', // emerald-500
+          data,
+          backgroundColor: 'rgba(255, 183, 77, 0.6)',
+          borderColor: 'rgb(255, 159, 28)',
           borderWidth: 1
         }
       ]
     };
-  }, [records, chartType]);
+  }, [inventoryRecords, chartType]);
 
-  // Prepare chart data for egg disposition (broken vs incubated)
-  const prepareDispositionChartData = useCallback(() => {
-    // Sort records by date
-    const sortedRecords = [...records].sort((a, b) => {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
-
-    // Get the last 7 days of records
-    const last7Days = new Date();
-    last7Days.setDate(last7Days.getDate() - 7);
-    
-    const filteredRecords = sortedRecords.filter(record => {
-      const recordDate = new Date(record.date);
-      return recordDate >= last7Days;
-    });
-
-    // Group by date for broken and incubated
-    const brokenByDate: {[key: string]: number} = {};
-    const incubatedByDate: {[key: string]: number} = {};
-    
-    filteredRecords.forEach(record => {
-      const date = record.date;
-      
-      if (!brokenByDate[date]) {
-        brokenByDate[date] = 0;
-      }
-      if (!incubatedByDate[date]) {
-        incubatedByDate[date] = 0;
-      }
-      
-      brokenByDate[date] += record.broken;
-      incubatedByDate[date] += record.incubated;
-    });
-
-    // Prepare chart data
-    const labels = Object.keys(brokenByDate).sort((a, b) => {
-      return new Date(a).getTime() - new Date(b).getTime();
-    });
-
-    const formattedLabels = labels.map(date => {
-      const d = new Date(date);
-      return d.toLocaleDateString('en-US', { month: 'short' as const, day: 'numeric' as const });
-    });
-
-    const brokenData = labels.map(date => brokenByDate[date]);
-    const incubatedData = labels.map(date => incubatedByDate[date]);
-
-    setDispositionChartData({
-      labels: formattedLabels,
-      datasets: [
-        {
-          label: 'Broken Eggs',
-          data: brokenData,
-          backgroundColor: 'rgba(239, 68, 68, 0.5)', // red-500 with opacity
-          borderColor: 'rgb(239, 68, 68)', // red-500
-          borderWidth: 1
-        },
-        {
-          label: 'Incubated Eggs',
-          data: incubatedData,
-          backgroundColor: 'rgba(59, 130, 246, 0.5)', // blue-500 with opacity
-          borderColor: 'rgb(59, 130, 246)', // blue-500
-          borderWidth: 1
-        }
-      ]
-    });
-  }, [records]);
-
-  // Prepare chart data when records change
+  // Update chart data when records or chart type changes
   useEffect(() => {
-    prepareDispositionChartData();
-    setChartData(prepareChartData());
-  }, [prepareChartData, prepareDispositionChartData]);
+    const data = prepareChartData();
+    setChartData(data);
+  }, [prepareChartData]);
+  
+  // Function to show success message
+  const showSuccessMessage = (message: string) => {
+    const msgElement = document.createElement('div');
+    msgElement.className = 'fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50';
+    msgElement.innerHTML = `<p>${message}</p>`;
+    document.body.appendChild(msgElement);
+    
+    // Remove the message after 3 seconds
+    setTimeout(() => {
+      msgElement.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+      setTimeout(() => document.body.removeChild(msgElement), 500);
+    }, 3000);
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
       <DashboardSidebar />
-      
-      {/* Main content */}
-      {showConfirmDialog ? (
-        <div className="flex-1 p-8 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-semibold mb-4">Confirm Deletion</h2>
-            <p className="mb-6">Are you sure you want to delete this record? This action cannot be undone.</p>
-            <div className="flex justify-end space-x-4">
-              <button 
-                className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                onClick={() => setShowConfirmDialog(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                onClick={() => recordToDelete && handleDelete(recordToDelete)}
-              >
-                Delete
-              </button>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <DashboardHeader />
+        <main className="flex-1 overflow-y-auto bg-gradient-to-br from-amber-50 to-orange-100 p-6">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-lg border border-white border-opacity-20">
+              <h1 className="text-3xl font-bold text-amber-700 flex items-center gap-3 mb-2">
+                <span className="text-4xl">🥚</span> Egg Production Tracker
+              </h1>
+              <p className="text-amber-800">Monitor your daily egg production with smart insights and analytics</p>
             </div>
-          </div>
-        </div>
-      ) : (
-        <main className="flex-1 p-8 overflow-y-auto">
-          <DashboardHeader />
-          
-          {/* Success and error messages */}
-          <div id="success-message" className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 hidden" role="alert">
-            <span className="block sm:inline"></span>
-          </div>
-          <div id="error-message" className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 hidden" role="alert">
-            <span className="block sm:inline"></span>
-          </div>
-          
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white border-opacity-20">
-              <h2 className="text-2xl font-bold text-amber-700">{totalThisWeek}</h2>
-              <p className="text-gray-600">Eggs collected this week</p>
-              <p className="text-xs text-gray-500 mt-2">{dailyAverage} eggs daily average</p>
+
+            {/* Statistics Dashboard */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl p-6 text-center shadow-md border border-white border-opacity-30 transform transition hover:translate-y-[-5px] hover:shadow-lg">
+                <div className="text-4xl font-bold text-amber-600 mb-2">{totalThisWeek}</div>
+                <div className="text-sm font-medium uppercase tracking-wide text-amber-800">This Week</div>
+              </div>
+              <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl p-6 text-center shadow-md border border-white border-opacity-30 transform transition hover:translate-y-[-5px] hover:shadow-lg">
+                <div className="text-4xl font-bold text-amber-600 mb-2">{dailyAverage}</div>
+                <div className="text-sm font-medium uppercase tracking-wide text-amber-800">Daily Average</div>
+              </div>
+              <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl p-6 text-center shadow-md border border-white border-opacity-30 transform transition hover:translate-y-[-5px] hover:shadow-lg">
+                <div className={`text-4xl font-bold mb-2 ${trendDirection === "up" ? "text-emerald-600" : "text-red-600"}`}>
+                  {trendDirection === "up" ? "↗" : "↘"} {Math.abs(trend)}%</div>
+                <div className="text-sm font-medium uppercase tracking-wide text-amber-800">vs Last Week</div>
+              </div>
+              <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl p-6 text-center shadow-md border border-white border-opacity-30 transform transition hover:translate-y-[-5px] hover:shadow-lg">
+                <div className="text-4xl font-bold text-amber-600 mb-2">{brokenThisWeek}</div>
+                <div className="text-sm font-medium uppercase tracking-wide text-amber-800">Broken This Week</div>
+              </div>
             </div>
-            
-            <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white border-opacity-20">
-              <h2 className="text-2xl font-bold text-amber-700">{brokenThisWeek}</h2>
-              <p className="text-gray-600">Broken eggs this week</p>
-              <p className="text-xs text-gray-500 mt-2">{brokenThisWeek > 0 ? ((brokenThisWeek / totalThisWeek) * 100).toFixed(1) : 0}% breakage rate</p>
-            </div>
-            
-            <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white border-opacity-20">
-              <h2 className="text-2xl font-bold text-amber-700">{totalThisWeek - totalLastWeek > 0 ? '+' : ''}{totalThisWeek - totalLastWeek}</h2>
-              <p className="text-gray-600">Change from last week</p>
-              <p className="text-xs text-gray-500 mt-2">
-                {totalLastWeek > 0 ? ((totalThisWeek - totalLastWeek) / totalLastWeek * 100).toFixed(1) : 0}% 
-                {totalThisWeek >= totalLastWeek ? 'increase' : 'decrease'}
-              </p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Form */}
-            <div className="lg:col-span-1">
+
+            {/* Main Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Add New Record Form */}
               <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white border-opacity-20">
-                <h2 className="text-xl font-semibold text-amber-700 mb-6">{isEditing ? 'Edit Record' : 'Add New Record'}</h2>
-                
-                <form id="egg-form" onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input
-                      type="date"
-                      id="date"
-                      name="date"
+                <h2 className="text-xl font-semibold text-amber-700 flex items-center gap-2 mb-6">
+                  {isEditing ? '✏️ Edit Record' : '📝 Add New Record'}
+                </h2>
+                <form id="egg-form" onSubmit={handleSubmit}>
+                  <div className="mb-4">
+                    <label htmlFor="date" className="block text-amber-800 font-medium mb-2">Date</label>
+                    <input 
+                      type="date" 
+                      id="date" 
                       value={formData.date}
                       onChange={handleInputChange}
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                      required
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white bg-opacity-90"
                     />
                   </div>
-                  
-                  <div>
-                    <label htmlFor="eggCount" className="block text-sm font-medium text-gray-700 mb-1">Egg Count</label>
-                    <input
-                      type="number"
-                      id="eggCount"
-                      name="eggCount"
-                      value={formData.eggCount}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                      required
-                    />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="eggCount" className="block text-amber-800 font-medium mb-2">Total Eggs</label>
+                      <input 
+                        type="number" 
+                        id="eggCount" 
+                        value={formData.eggCount === 0 ? "" : formData.eggCount}
+                        onChange={handleInputChange}
+                        placeholder="0" 
+                        min="0"
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white bg-opacity-90"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="pickupTime" className="block text-amber-800 font-medium mb-2">Pickup Time</label>
+                      <input 
+                        type="time" 
+                        id="pickupTime" 
+                        value={formData.pickupTime}
+                        onChange={handleInputChange}
+                        placeholder="Current time"
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white bg-opacity-90"
+                      />
+                    </div>
                   </div>
-                  
-                  <div>
-                    <label htmlFor="incubated" className="block text-sm font-medium text-gray-700 mb-1">Incubated Eggs</label>
-                    <input
-                      type="number"
-                      id="incubated"
-                      name="incubated"
-                      value={formData.incubated}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="broken" className="block text-sm font-medium text-gray-700 mb-1">Broken Eggs</label>
-                    <input
-                      type="number"
-                      id="broken"
-                      name="broken"
-                      value={formData.broken}
-                      onChange={handleInputChange}
-                      min="0"
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="pickupMethod" className="block text-sm font-medium text-gray-700 mb-1">Pickup Method</label>
-                    <select
-                      id="pickupMethod"
-                      name="pickupMethod"
+
+                  <div className="mb-4">
+                    <label htmlFor="pickupMethod" className="block text-amber-800 font-medium mb-2">Pickup Method</label>
+                    <select 
+                      id="pickupMethod" 
                       value={formData.pickupMethod}
                       onChange={handleInputChange}
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white bg-opacity-90"
                     >
-                      <option value="">Select method</option>
-                      <option value="manual">Manual Collection</option>
-                      <option value="automated">Automated System</option>
+                      <option value="">Select Method</option>
+                      <option value="Morning Coop Check">Morning Coop Check</option>
+                      <option value="Evening Collection">Evening Collection</option>
+                      <option value="Free Range Pickup">Free Range Pickup</option>
+                      <option value="Nest Box Collection">Nest Box Collection</option>
                     </select>
                   </div>
-                  
-                  <div>
-                    <label htmlFor="weather" className="block text-sm font-medium text-gray-700 mb-1">Weather</label>
-                    <select
-                      id="weather"
-                      name="weather"
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="incubated" className="block text-amber-800 font-medium mb-2">For Incubation</label>
+                      <input 
+                        type="number" 
+                        id="incubated" 
+                        value={formData.incubated === 0 ? "" : formData.incubated}
+                        onChange={handleInputChange}
+                        placeholder="0" 
+                        min="0"
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white bg-opacity-90"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="broken" className="block text-amber-800 font-medium mb-2">Broken/Damaged</label>
+                      <input 
+                        type="number" 
+                        id="broken" 
+                        value={formData.broken === 0 ? "" : formData.broken}
+                        onChange={handleInputChange}
+                        placeholder="0" 
+                        min="0"
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white bg-opacity-90"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="weather" className="block text-amber-800 font-medium mb-2">Weather Conditions</label>
+                    <select 
+                      id="weather" 
                       value={formData.weather}
                       onChange={handleInputChange}
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white bg-opacity-90"
                     >
-                      <option value="">Select weather</option>
-                      <option value="sunny">Sunny</option>
-                      <option value="cloudy">Cloudy</option>
-                      <option value="rainy">Rainy</option>
-                      <option value="stormy">Stormy</option>
-                      <option value="snowy">Snowy</option>
+                      <option value="">Select Weather</option>
+                      <option value="sunny">☀️ Sunny</option>
+                      <option value="cloudy">☁️ Cloudy</option>
+                      <option value="rainy">🌧️ Rainy</option>
+                      <option value="cold">❄️ Cold</option>
                     </select>
                   </div>
-                  
-                  <div>
-                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                    <textarea
-                      id="notes"
-                      name="notes"
+
+                  <div className="mb-4">
+                    <label htmlFor="notes" className="block text-amber-800 font-medium mb-2">Notes (Optional)</label>
+                    <textarea 
+                      id="notes" 
                       value={formData.notes}
                       onChange={handleInputChange}
-                      rows={3}
-                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      rows={3} 
+                      placeholder="Any observations about the flock, egg quality, or unusual circumstances..."
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white bg-opacity-90"
                     ></textarea>
                   </div>
-                  
-                  <div className="flex justify-between pt-2">
-                    {isEditing ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={handleCancelEdit}
-                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="submit"
-                          className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-                        >
-                          Update Record
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        type="submit"
-                        className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+
+                  <div className="flex gap-3">
+                    <button 
+                      type="submit" 
+                      className="flex-1 py-3 px-6 bg-gradient-to-r from-amber-600 to-amber-500 text-white font-semibold rounded-lg shadow-md hover:translate-y-[-2px] hover:shadow-lg transition duration-300"
+                    >
+                      {isEditing ? 'Update Record' : 'Add Egg Record'}
+                    </button>
+                    
+                    {isEditing && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setFormData(initialFormState);
+                          setIsEditing(false);
+                          setEditingId(null);
+                        }}
+                        className="py-3 px-6 bg-gray-400 text-white font-semibold rounded-lg shadow-md hover:bg-gray-500 hover:translate-y-[-2px] hover:shadow-lg transition duration-300"
                       >
-                        Add Record
+                        Cancel
                       </button>
                     )}
                   </div>
                 </form>
               </div>
-            </div>
-            
-            {/* Charts and Records */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Production Trends Chart */}
+
+              {/* Production Chart */}
               <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white border-opacity-20">
-                <h2 className="text-xl font-semibold text-amber-700 flex items-center gap-2 mb-6">📊 Production Trends</h2>
-                
-                <div className="flex mb-4 space-x-2">
-                  <button 
-                    className={`px-3 py-1 rounded-lg text-sm ${chartType === "7days" ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-                    onClick={() => setChartType("7days")}
-                  >
-                    Last 7 Days
-                  </button>
-                  <button 
-                    className={`px-3 py-1 rounded-lg text-sm ${chartType === "30days" ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-                    onClick={() => setChartType("30days")}
-                  >
-                    Last 30 Days
-                  </button>
-                  <button 
-                    className={`px-3 py-1 rounded-lg text-sm ${chartType === "weekly" ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
-                    onClick={() => setChartType("weekly")}
-                  >
-                    Weekly
-                  </button>
+                <h2 className="text-xl font-semibold text-amber-700 flex items-center gap-2 mb-6">
+                  📊 Production Trends
+                </h2>
+                <div className="mb-4">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="text-sm text-gray-600">Select time period:</div>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => setChartType("7days")} 
+                      className={`px-3 py-1 text-sm rounded-md transition ${chartType === "7days" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                    >
+                      7 Days
+                    </button>
+                    <button 
+                      onClick={() => setChartType("30days")} 
+                      className={`px-3 py-1 text-sm rounded-md transition ${chartType === "30days" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                    >
+                      30 Days
+                    </button>
+                    <button 
+                      onClick={() => setChartType("weekly")} 
+                      className={`px-3 py-1 text-sm rounded-md transition ${chartType === "weekly" ? "bg-amber-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                    >
+                      Weekly
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="h-[250px] bg-white rounded-xl p-2 border border-gray-200">
                   {chartData ? (
-                    <Bar 
-                      data={chartData}
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                          y: {
-                            beginAtZero: true,
-                            title: {
-                              display: true,
-                              text: 'Eggs'
-                            }
-                          },
-                          x: {
-                            title: {
-                              display: true,
-                              text: 'Date'
-                            }
-                          }
-                        },
-                        plugins: {
-                          legend: {
-                            display: false
-                          },
-                          tooltip: {
-                            callbacks: {
-                              label: function(context) {
-                                return `${context.parsed.y} eggs`;
-                              }
-                            }
-                          }
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <p className="text-gray-500">Loading chart data...</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Egg Disposition Chart (Broken vs Incubated) */}
-              <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white border-opacity-20 mt-6">
-                <h2 className="text-xl font-semibold text-amber-700 flex items-center gap-2 mb-6">🥚 Egg Disposition</h2>
-                
-                <div className="mb-4">
-                  <div className="h-[250px] bg-white rounded-xl p-2 border border-gray-200">
-                    {dispositionChartData ? (
+                    chartType === "30days" ? (
                       <Bar 
-                        data={dispositionChartData}
+                        data={chartData as ChartData<'bar', number[], string>} 
                         options={{
                           responsive: true,
                           maintainAspectRatio: false,
@@ -706,51 +710,394 @@ export default function InventoryPage() {
                               beginAtZero: true,
                               title: {
                                 display: true,
-                                text: 'Eggs'
-                              },
-                              stacked: true
+                                text: 'Egg Count'
+                              }
                             },
                             x: {
                               title: {
                                 display: true,
                                 text: 'Date'
                               },
-                              stacked: true
+                              ticks: {
+                                maxRotation: 90,
+                                minRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 15
+                              }
+                            }
+                          },
+                          plugins: {
+                            legend: {
+                              position: 'top',
+                            },
+                            tooltip: {
+                              callbacks: {
+                                title: function(tooltipItems) {
+                                  return tooltipItems[0].label;
+                                },
+                                label: function(tooltipItem: TooltipItem<ChartType>) {
+                                  return `${tooltipItem.dataset.label}: ${tooltipItem.parsed.y} eggs`;
+                                }
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    ) : chartType === "weekly" ? (
+                      <Bar 
+                        data={chartData as ChartData<'bar', number[], string>} 
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              title: {
+                                display: true,
+                                text: 'Egg Count'
+                              }
                             }
                           },
                           plugins: {
                             tooltip: {
                               callbacks: {
-                                label: function(context) {
-                                  return `${context.dataset.label}: ${context.parsed.y} eggs`;
+                                label: function(context: {parsed: {y: number}}) {
+                                  return `${context.parsed.y} eggs`;
                                 }
                               }
-                            },
-                            legend: {
-                              display: true,
-                              position: 'top'
-                            },
-                            title: {
-                              display: true,
-                              text: 'Broken vs Incubated Eggs'
                             }
                           }
                         }}
                       />
                     ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500">Loading chart data...</p>
+                      <Bar 
+                        data={chartData as ChartData<'bar', number[], string>} 
+                        options={{
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          scales: {
+                            y: {
+                              beginAtZero: true,
+                              title: {
+                                display: true,
+                                text: 'Egg Count'
+                              }
+                            }
+                          },
+                          plugins: {
+                            tooltip: {
+                              callbacks: {
+                                label: function(context: {parsed: {y: number}}) {
+                                  return `${context.parsed.y} eggs`;
+                                }
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    )
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-5xl mb-3">📈</div>
+                        <div className="text-gray-600">No production data available</div>
+                        <div className="text-sm text-gray-500 mt-2">Add records to see trends</div>
                       </div>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2 text-center">
-                    Comparison of broken eggs vs eggs placed for incubation over the last 7 days
-                  </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="text-xs text-gray-500 mt-2 text-center">
+                  {chartType === "7days" ? "Daily egg production for the last 7 days" : 
+                   chartType === "30days" ? "Daily production with 7-day moving average" : 
+                   "Total weekly egg production"}
                 </div>
               </div>
+              </div>
             </div>
+
+            {/* Records Section */}
+            <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white border-opacity-20">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 className="text-xl font-semibold text-amber-700 flex items-center gap-2">
+                  📋 Production Records
+                </h2>
+                <div className="flex flex-wrap gap-3">
+                  <input 
+                    type="text" 
+                    placeholder="Search records..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="p-2 border-2 border-gray-200 rounded-md text-sm bg-white bg-opacity-90"
+                  />
+                  <select 
+                    value={methodFilter}
+                    onChange={(e) => setMethodFilter(e.target.value)}
+                    className="p-2 border-2 border-gray-200 rounded-md text-sm bg-white bg-opacity-90"
+                  >
+                    <option>All Methods</option>
+                    <option>Morning Coop Check</option>
+                    <option>Evening Collection</option>
+                    <option>Free Range Pickup</option>
+                    <option>Nest Box Collection</option>
+                  </select>
+                  <select 
+                    value={timeFilter}
+                    onChange={(e) => setTimeFilter(e.target.value)}
+                    className="p-2 border-2 border-gray-200 rounded-md text-sm bg-white bg-opacity-90"
+                  >
+                    <option>Last 7 days</option>
+                    <option>Last 30 days</option>
+                    <option>This month</option>
+                    <option>All time</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Record Cards */}
+              <div className="space-y-4">
+                {getFilteredRecords().length > 0 ? (
+                  getFilteredRecords().map((record: InventoryRecord) => (
+                    <div 
+                      key={record.id} 
+                      className="bg-white bg-opacity-80 rounded-xl p-5 shadow-sm border-l-4 border-amber-500 hover:translate-x-1 hover:shadow-md transition duration-200"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <div className="text-lg font-semibold text-amber-700">{record.date}</div>
+                          <div className="text-2xl font-bold text-blue-700">{record.eggCount} eggs</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-4">
+                        <div className="text-sm"><span className="font-semibold text-gray-700">Method:</span> {record.pickupMethod}</div>
+                        <div className="text-sm"><span className="font-semibold text-gray-700">Time:</span> {record.pickupTime}</div>
+                        <div className="text-sm"><span className="font-semibold text-gray-700">Weather:</span> {record.weather}</div>
+                        <div className="text-sm"><span className="font-semibold text-gray-700">Incubated:</span> {record.incubated}</div>
+                        <div className="text-sm"><span className="font-semibold text-gray-700">Broken:</span> {record.broken}</div>
+                        <div className="text-sm"><span className="font-semibold text-gray-700">For Sale:</span> {record.eggCount - record.incubated - record.broken}</div>
+                      </div>
+                      {record.notes && (
+                        <div className="text-sm text-gray-600 mb-4">
+                          <span className="font-semibold text-gray-700">Notes:</span> {record.notes}
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <button 
+                          className="px-3 py-1 bg-emerald-500 text-white text-sm rounded-md hover:bg-emerald-600 transition"
+                          onClick={() => {
+                            // Set the record data for editing
+                            const recordToEdit = inventoryRecords.find(r => r.id === record.id);
+                            if (recordToEdit) {
+                              setFormData({
+                                date: recordToEdit.date,
+                                eggCount: recordToEdit.eggCount,
+                                pickupTime: recordToEdit.pickupTime,
+                                pickupMethod: recordToEdit.pickupMethod,
+                                broken: recordToEdit.broken,
+                                incubated: recordToEdit.incubated,
+                                weather: recordToEdit.weather,
+                                notes: recordToEdit.notes || ""
+                              });
+                              setEditingId(record.id);
+                              setIsEditing(true);
+                              
+                              // Scroll to form
+                              const formElement = document.getElementById("egg-form");
+                              if (formElement) {
+                                formElement.scrollIntoView({ behavior: 'smooth' });
+                              }
+                            }
+                          }}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button 
+                          className="px-3 py-1 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDelete(record.id);
+                          }}
+                          aria-label={`Delete record ${record.id}`}
+                          type="button"
+                        >
+                          🗑️ Delete
+                        </button>
+                        <button
+                          onClick={() => handleIncubate(record)}
+                          className="text-purple-600 hover:text-purple-900"
+                          aria-label="Send to incubation"
+                          title="Send to incubation"
+                        >
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 text-gray-500">
+                    <div className="text-5xl mb-3">🔍</div>
+                    <p>No records found matching your filters</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Add Button */}
+            <button 
+              className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-amber-600 to-amber-500 rounded-full flex items-center justify-center text-white text-2xl shadow-lg hover:scale-110 transition duration-300"
+              title="Quick Add Record"
+              onClick={() => document.getElementById("eggCount")?.focus()}
+            >
+              +
+            </button>
           </div>
         </main>
+      </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-medium mb-4">Confirm Delete</h3>
+            <p className="mb-6 text-gray-600">Are you sure you want to delete this record? This action cannot be undone.</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setRecordToDelete(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Incubation Modal */}
+      {showIncubationModal && recordForIncubation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
+            <h3 className="text-lg font-medium mb-4">Add Eggs to Incubation</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Batch Name</label>
+                <input
+                  type="text"
+                  value={incubationData.name}
+                  onChange={(e) => setIncubationData({...incubationData, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Number of Eggs</label>
+                <input
+                  type="number"
+                  value={incubationData.eggCount}
+                  onChange={(e) => setIncubationData({...incubationData, eggCount: Math.min(parseInt(e.target.value) || 0, recordForIncubation.incubated)})}
+                  max={recordForIncubation.incubated}
+                  min={1}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum: {recordForIncubation.incubated} eggs</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Species</label>
+                <select
+                  value={incubationData.speciesType}
+                  onChange={(e) => setIncubationData({...incubationData, speciesType: e.target.value as "chicken" | "duck" | "quail" | "goose" | "turkey", speciesVariety: ""})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="chicken">Chicken</option>
+                  <option value="duck">Duck</option>
+                  <option value="quail">Quail</option>
+                  <option value="goose">Goose</option>
+                  <option value="turkey">Turkey</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Variety</label>
+                <select
+                  value={incubationData.speciesVariety}
+                  onChange={(e) => setIncubationData({...incubationData, speciesVariety: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select a variety</option>
+                  {incubationData.speciesType === "chicken" && [
+                    "Rhode Island Red", "Leghorn", "Plymouth Rock", "Orpington", "Wyandotte", "Sussex", "Australorp"
+                  ].map(variety => (
+                    <option key={variety} value={variety}>{variety}</option>
+                  ))}
+                  {incubationData.speciesType === "duck" && [
+                    "Pekin", "Mallard", "Muscovy", "Runner", "Cayuga", "Swedish", "Rouen"
+                  ].map(variety => (
+                    <option key={variety} value={variety}>{variety}</option>
+                  ))}
+                  {incubationData.speciesType === "quail" && [
+                    "Coturnix", "Bobwhite", "Button", "California", "Japanese"
+                  ].map(variety => (
+                    <option key={variety} value={variety}>{variety}</option>
+                  ))}
+                  {incubationData.speciesType === "goose" && [
+                    "Embden", "Toulouse", "Chinese", "African", "Pilgrim"
+                  ].map(variety => (
+                    <option key={variety} value={variety}>{variety}</option>
+                  ))}
+                  {incubationData.speciesType === "turkey" && [
+                    "Broad Breasted White", "Broad Breasted Bronze", "Bourbon Red", "Narragansett", "Royal Palm"
+                  ].map(variety => (
+                    <option key={variety} value={variety}>{variety}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={incubationData.notes}
+                  onChange={(e) => setIncubationData({...incubationData, notes: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  rows={3}
+                ></textarea>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowIncubationModal(false);
+                  setRecordForIncubation(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmIncubation}
+                className="px-4 py-2 bg-purple-600 border border-transparent rounded-md text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                Add to Incubation
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
