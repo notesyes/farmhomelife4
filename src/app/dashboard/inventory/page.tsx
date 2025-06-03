@@ -1382,6 +1382,7 @@ export default function InventoryPage() {
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  aria-label="Batch name for incubation"
                   required
                 />
               </div>
@@ -1405,6 +1406,7 @@ export default function InventoryPage() {
                   max={recordForIncubation.incubated}
                   min={1}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  aria-label="Number of eggs for incubation"
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -1431,6 +1433,7 @@ export default function InventoryPage() {
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  aria-label="Select species type for incubation"
                   required
                 >
                   <option value="chicken">Chicken</option>
@@ -1454,6 +1457,7 @@ export default function InventoryPage() {
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  aria-label="Select species variety for incubation"
                   required
                 >
                   <option value="">Select a variety</option>
@@ -1533,6 +1537,7 @@ export default function InventoryPage() {
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  aria-label="Additional notes for incubation batch"
                   rows={3}
                 ></textarea>
               </div>
