@@ -13,6 +13,12 @@ const QuickActionsCard: React.FC = () => {
       color: "bg-blue-500 hover:bg-blue-600"
     },
     {
+      id: "incubation",
+      label: "Incubation",
+      icon: "🐥",
+      color: "bg-amber-500 hover:bg-amber-600"
+    },
+    {
       id: "new-sale",
       label: "New Sale",
       icon: "💰",
@@ -23,6 +29,12 @@ const QuickActionsCard: React.FC = () => {
       label: "Feed Stock",
       icon: "🌾",
       color: "bg-yellow-500 hover:bg-yellow-600"
+    },
+    {
+      id: "customers",
+      label: "Customers",
+      icon: "👥",
+      color: "bg-indigo-500 hover:bg-indigo-600"
     },
     {
       id: "generate-report",
@@ -41,17 +53,29 @@ const QuickActionsCard: React.FC = () => {
           <button
             key={action.id}
             onClick={() => {
-              if (action.id === "generate-report") {
-                router.push("/dashboard/reports");
-              } else if (action.id === "inventory") {
-                router.push("/dashboard/inventory");
-              } else if (action.id === "feed-stock") {
-                router.push("/dashboard/feed");
-              } else if (action.id === "new-sale") {
-                router.push("/dashboard/sales");
-              } else {
-                // Handle other actions (to be implemented)
-                alert(`${action.label} feature will be implemented soon!`);
+              // Handle navigation for each action
+              switch(action.id) {
+                case "generate-report":
+                  router.push("/dashboard/reports");
+                  break;
+                case "inventory":
+                  router.push("/dashboard/inventory");
+                  break;
+                case "feed-stock":
+                  router.push("/dashboard/feed");
+                  break;
+                case "new-sale":
+                  router.push("/dashboard/sales");
+                  break;
+                case "incubation":
+                  router.push("/dashboard/incubation");
+                  break;
+                case "customers":
+                  router.push("/dashboard/customers");
+                  break;
+                default:
+                  // Handle other actions (to be implemented)
+                  alert(`${action.label} feature will be implemented soon!`);
               }
             }}
             className={`${action.color} text-white rounded-lg py-3 px-4 flex items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${action.color.split(' ')[0]}`}
