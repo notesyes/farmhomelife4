@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import Script from "next/script";
 
 // Types for our customer data
 type Customer = {
@@ -195,20 +196,96 @@ export default function CustomersPage() {
 
   // Function to handle downloading customer data as PDF
   const handleDownloadPDF = () => {
-    alert("PDF download functionality would be implemented here");
+    // Check if jsPDF is available
+    if (typeof window !== 'undefined' && (window as any).jspdf) {
+      try {
+        // Create a new jsPDF instance
+        const { jsPDF } = (window as any).jspdf;
+        const doc = new jsPDF();
+        
+        // Add title
+        doc.setFontSize(18);
+        doc.text('Farm Home Life - Customer Report', 14, 22);
+        doc.setFontSize(11);
+        doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 30);
+        
+        // Add table headers
+        doc.setFontSize(12);
+        doc.setTextColor(0, 128, 0); // Green color for headers
+        doc.text('Customer Name', 14, 45);
+        doc.text('Dozens Purchased', 90, 45);
+        doc.text('Total Sales ($)', 150, 45);
+        
+        // Reset text color
+        doc.setTextColor(0, 0, 0);
+        
+        // Add customer data
+        let yPos = 55;
+        customers.forEach((customer, index) => {
+          if (yPos > 270) { // Check if we need a new page
+            doc.addPage();
+            yPos = 20;
+            // Add headers on new page
+            doc.setFontSize(12);
+            doc.setTextColor(0, 128, 0);
+            doc.text('Customer Name', 14, yPos);
+            doc.text('Dozens Purchased', 90, yPos);
+            doc.text('Total Sales ($)', 150, yPos);
+            doc.setTextColor(0, 0, 0);
+            yPos += 10;
+          }
+          
+          doc.text(customer.name, 14, yPos);
+          doc.text(customer.dozensPurchased.toFixed(2), 90, yPos);
+          doc.text(customer.totalSales.toFixed(2), 150, yPos);
+          yPos += 10;
+          
+          // Add a light line between rows (except last)
+          if (index < customers.length - 1) {
+            doc.setDrawColor(200, 200, 200);
+            doc.line(14, yPos - 5, 190, yPos - 5);
+          }
+        });
+        
+        // Add summary
+        const totalDozens = customers.reduce((sum, customer) => sum + customer.dozensPurchased, 0);
+        const totalSales = customers.reduce((sum, customer) => sum + customer.totalSales, 0);
+        
+        yPos += 10;
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Total:', 14, yPos);
+        doc.text(totalDozens.toFixed(2), 90, yPos);
+        doc.text(totalSales.toFixed(2), 150, yPos);
+        
+        // Add footer
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Farm Home Life Dashboard - Confidential', 14, 285);
+        
+        // Save the PDF
+        doc.save('farm-home-life-customers.pdf');
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('There was an error generating the PDF. Please try again.');
+      }
+    } else {
+      alert('PDF generation library is loading. Please try again in a moment.');
+    }
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <DashboardSidebar />
+    <>
+      <div className="flex h-screen bg-gray-50">
+        {/* Sidebar */}
+        <DashboardSidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader />
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <DashboardHeader />
 
-        {/* Customer Management Content */}
-        <main className="flex-1 overflow-y-auto p-4 bg-amber-50">
+          {/* Customer Management Content */}
+          <main className="flex-1 overflow-y-auto p-4 bg-amber-50">
           <div className="max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-6">
               <div>
@@ -518,8 +595,18 @@ export default function CustomersPage() {
               </div>
             </div>
           </div>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+      
+      {/* Load jsPDF library */}
+      <Script 
+        src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" 
+        strategy="lazyOnload"
+        onLoad={() => {
+          console.log('jsPDF library loaded');
+        }}
+      />
+    </>
   );
 }
