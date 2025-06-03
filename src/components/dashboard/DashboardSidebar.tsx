@@ -83,9 +83,17 @@ const DashboardSidebar: React.FC = () => {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-white">John Doe</p>
-                <Link href="/dashboard/profile" className="text-xs font-medium text-emerald-200 hover:text-white">
-                  View profile
-                </Link>
+                <div className="flex flex-col space-y-1 mt-1">
+                  <Link href="/dashboard/profile" className="text-xs font-medium text-emerald-200 hover:text-white">
+                    Your Profile
+                  </Link>
+                  <Link href="/dashboard/settings" className="text-xs font-medium text-emerald-200 hover:text-white">
+                    Settings
+                  </Link>
+                  <Link href="/" className="text-xs font-medium text-emerald-200 hover:text-white">
+                    Sign out
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

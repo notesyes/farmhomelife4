@@ -40,6 +40,8 @@ export interface QuickAction {
 export interface SalesSummary {
   totalRevenue: number;
   pendingOrders: number;
+  yearlyRevenue: number;
+  yearlyOrders: number;
 }
 
 export interface SalesPerformance {
@@ -55,6 +57,43 @@ export interface Transaction {
   customer: string;
   quantity: number;
   total: number;
+}
+
+export interface Sale {
+  id: string;
+  date: string;
+  customerId: string;
+  customerName: string;
+  eggProductionId: string;
+  eggProductionName: string;
+  dozens: number;
+  pricePerDozen: number;
+  total: number;
+  pickupMethod: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  pickupDate: string;
+  pickupTime: string;
+  notes: string;
+}
+
+export enum FeedType {
+  Layer = "Layer",
+  Grower = "Grower",
+  Starter = "Starter",
+  Finisher = "Finisher",
+  AllPurpose = "All Purpose",
+  Other = "Other"
+}
+
+export interface FeedPurchase {
+  id: string;
+  date: string;
+  feedType: FeedType;
+  brand: string;
+  quantity: number; // in pounds
+  cost: number;
+  notes?: string;
 }
 
 export interface FeatureCard {

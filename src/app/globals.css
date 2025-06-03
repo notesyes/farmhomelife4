@@ -27,22 +27,22 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Fix input text visibility with balanced styling */
-input {
+/* Fix form element text visibility with balanced styling */
+input, select, textarea, option {
   color: #333333 !important; /* Dark gray instead of pure black */
   font-weight: 500 !important; /* Medium weight instead of bold */
   -webkit-text-fill-color: #333333 !important; /* For WebKit browsers */
   opacity: 1 !important;
 }
 
-input::placeholder {
+input::placeholder, textarea::placeholder {
   color: #9ca3af !important;
   opacity: 0.7 !important;
   font-weight: 400 !important;
   -webkit-text-fill-color: #9ca3af !important;
 }
 
-input:focus {
+input:focus, select:focus, textarea:focus {
   color: #333333 !important;
   -webkit-text-fill-color: #333333 !important;
 }

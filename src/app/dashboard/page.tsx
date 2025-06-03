@@ -91,8 +91,8 @@ export default function DashboardPage() {
   
   // Load inventory, sales, and incubation data from localStorage
   useEffect(() => {
-    // Load inventory records
     try {
+      // Load inventory records
       const savedInventory = localStorage.getItem('inventoryRecords');
       if (savedInventory) {
         setInventoryRecords(JSON.parse(savedInventory));
@@ -135,6 +135,8 @@ export default function DashboardPage() {
             pickupMethod: "Pickup in Person",
             paymentMethod: "Cash",
             paymentStatus: "Paid",
+            pickupDate: new Date().toISOString().split('T')[0],
+            pickupTime: "14:00",
             notes: "Regular customer"
           }
         ];
@@ -143,9 +145,30 @@ export default function DashboardPage() {
       }
       
       // Load incubation batches
-      const savedIncubation = localStorage.getItem('incubationBatches');
-      if (savedIncubation) {
-        setIncubationBatches(JSON.parse(savedIncubation));
+      const savedBatches = localStorage.getItem('incubationBatches');
+      if (savedBatches) {
+        setIncubationBatches(JSON.parse(savedBatches));
+      } else {
+        // Default data if nothing is saved
+        const defaultBatches = [
+          {
+            id: "batch1",
+            name: "Spring Batch 1",
+            startDate: "2025-05-01",
+            expectedHatchDate: "2025-05-22",
+            eggCount: 12,
+            speciesType: "chicken" as SpeciesType,
+            speciesVariety: "Rhode Island Red",
+            notes: "First batch of the season",
+            status: "incubating" as "incubating" | "hatched" | "failed",
+            temperature: 99.5,
+            humidity: 55,
+            lastTurned: new Date().toISOString(),
+            lastCandled: new Date().toISOString()
+          }
+        ];
+        setIncubationBatches(defaultBatches);
+        localStorage.setItem('incubationBatches', JSON.stringify(defaultBatches));
       }
       
       // Load feed purchases
@@ -157,21 +180,21 @@ export default function DashboardPage() {
         const defaultFeedPurchases: FeedPurchase[] = [
           {
             id: "p1",
-            date: "2025-05-15",
-            feedType: "chicken",
-            brand: "Organic Layer",
+            date: "2025-05-01",
+            feedType: "chicken" as FeedType,
+            brand: "Farm Supply Co.",
             quantity: 50,
-            cost: 32.99,
-            notes: "On sale at Tractor Supply"
+            cost: 35.99,
+            notes: "Monthly bulk purchase"
           },
           {
             id: "p2",
-            date: "2025-05-28",
-            feedType: "duck",
-            brand: "Waterfowl Blend",
+            date: "2025-05-15",
+            feedType: "duck" as FeedType,
+            brand: "Waterfowl Nutrition",
             quantity: 25,
-            cost: 24.50,
-            notes: "From local feed store"
+            cost: 22.50,
+            notes: "Special blend for ducklings"
           }
         ];
         setFeedPurchases(defaultFeedPurchases);
@@ -188,21 +211,21 @@ export default function DashboardPage() {
           {
             id: "u1",
             date: "2025-05-20",
-            feedType: "chicken",
+            feedType: "chicken" as FeedType,
             quantity: 5,
             notes: "Weekly refill of feeders"
           },
           {
             id: "u2",
             date: "2025-05-27",
-            feedType: "chicken",
+            feedType: "chicken" as FeedType,
             quantity: 4.5,
             notes: "Weekly refill of feeders"
           },
           {
             id: "u3",
             date: "2025-05-30",
-            feedType: "duck",
+            feedType: "duck" as FeedType,
             quantity: 3,
             notes: "Refilled duck feeders"
           }
@@ -428,8 +451,9 @@ export default function DashboardPage() {
                 label="Daily Revenue"
                 unit="$"
                 trend={dashboardStats.revenueTrend}
-                color="purple"
+                color="green"
                 description="Based on today's sales"
+                onClick={() => router.push('/dashboard/sales')}
               />
               <DashboardStatCard 
                 value={dashboardStats.totalFeedPurchased}
