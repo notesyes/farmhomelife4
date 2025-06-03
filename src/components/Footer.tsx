@@ -1,3 +1,6 @@
+import React from "react";
+import Link from "next/link";
+
 interface FooterProps {
   className?: string;
 }
@@ -126,12 +129,12 @@ const Footer: React.FC<FooterProps> = ({ className = "" }) => {
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/contact"
                   className="text-gray-300 hover:text-emerald-400 text-sm transition-colors duration-200"
                 >
                   Contact
-                </a>
+                </Link>
               </li>
               <li>
                 <a

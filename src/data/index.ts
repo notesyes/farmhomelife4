@@ -111,7 +111,7 @@ export const testimonialsData: Testimonial[] = [
     author: {
       name: "Emily Chen",
       company: "Organic Egg Farm",
-      farmSize: "1,500 hens",
+      farmSize: "50 hens",
     },
   },
 ];

@@ -91,6 +91,9 @@ export default function DashboardPage() {
   
   // Load inventory, sales, and incubation data from localStorage
   useEffect(() => {
+    // Only run on client-side
+    if (typeof window === 'undefined') return;
+    
     try {
       // Load inventory records
       const savedInventory = localStorage.getItem('inventoryRecords');
@@ -429,8 +432,8 @@ export default function DashboardPage() {
                 onClick={() => router.push('/dashboard/inventory')}
               />
               <DashboardStatCard 
-                value={parseFloat(localStorage.getItem('availableDozens') ? 
-                  JSON.parse(localStorage.getItem('availableDozens') || '{}').total || 0 : 0)}
+                value={typeof window !== 'undefined' ? parseFloat(localStorage.getItem('availableDozens') ? 
+                  JSON.parse(localStorage.getItem('availableDozens') || '{}').total || 0 : 0) : 0}
                 label="Dozens Available"
                 trend="+0.0%"
                 color="green"

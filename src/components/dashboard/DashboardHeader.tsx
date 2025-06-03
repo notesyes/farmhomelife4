@@ -12,12 +12,12 @@ const DashboardHeader: React.FC = () => {
   const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [paymentData] = useState({
-    currentPlan: "Premium Farm",
+    currentPlan: "Farm Home Life Monthly",
     nextBillingDate: "July 3, 2025",
-    amount: "$29.99",
+    amount: "$6.99",
     lastPayment: {
       date: "June 3, 2025",
-      amount: "$29.99",
+      amount: "$6.99",
       status: "Paid"
     },
     paymentMethod: {

@@ -24,6 +24,9 @@ const SalesPerformanceCard: React.FC = () => {
   });
 
   useEffect(() => {
+    // Only run on client-side
+    if (typeof window === 'undefined') return;
+    
     // Load sales data and feed costs from localStorage
     const loadData = () => {
       try {

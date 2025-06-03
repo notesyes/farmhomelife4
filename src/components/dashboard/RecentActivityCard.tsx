@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface Sale {
   id: string;
@@ -36,10 +37,14 @@ interface Transaction {
 }
 
 const RecentActivityCard = () => {
+  const router = useRouter();
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   
   // Load sales and feed purchase data from localStorage
   useEffect(() => {
+    // Only run on client-side
+    if (typeof window === 'undefined') return;
+    
     try {
       // Load sales data
       const savedSales = localStorage.getItem('salesRecords');
@@ -97,7 +102,10 @@ const RecentActivityCard = () => {
     <div className="bg-white rounded-lg shadow-sm p-6 h-full">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-medium text-gray-800">Recent Activity</h3>
-        <button className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+        <button 
+          onClick={() => router.push('/dashboard/activity')}
+          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+        >
           View all
         </button>
       </div>
