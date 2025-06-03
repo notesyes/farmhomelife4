@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
@@ -16,20 +15,6 @@ type Customer = {
   email?: string;
   phone?: string;
   address?: string;
-};
-
-// Define inventory record type to match inventory page
-type InventoryRecord = {
-  id: string;
-  date: string;
-  eggCount: number;
-  pickupTime: string;
-  pickupMethod: string;
-  eggType: string;
-  broken: number;
-  incubated: number;
-  weather: string;
-  notes: string;
 };
 
 type EggProduction = {
@@ -61,8 +46,7 @@ function SalesPageContent() {
   const customerIdFilter = searchParams.get("customerId");
 
   // Customer data with localStorage persistence
-  const [customers, setCustomers] = useState<Customer[]>(() => {
-    // Check if we're in the browser environment
+  const [customers] = useState<Customer[]>(() => {
     if (typeof window !== "undefined") {
       const savedCustomers = localStorage.getItem("farmhomelife-customers");
       if (savedCustomers) {
@@ -73,16 +57,8 @@ function SalesPageContent() {
         }
       }
     }
-    // Default initial data
-    return [
-      { id: "1", name: "juan" },
-      { id: "2", name: "jane" },
-      { id: "3", name: "bob" },
-      { id: "4", name: "michael" },
-      { id: "5", name: "natasha" },
-      { id: "6", name: "Peter" },
-      { id: "7", name: "sage" },
-    ];
+    // Start with empty customer list
+    return [];
   });
 
   // Egg production records matching inventory egg types
@@ -96,7 +72,6 @@ function SalesPageContent() {
 
   // Sales data with localStorage persistence
   const [sales, setSales] = useState<Sale[]>(() => {
-    // Check if we're in the browser environment
     if (typeof window !== "undefined") {
       const savedSales = localStorage.getItem("farmhomelife-sales");
       if (savedSales) {
@@ -107,24 +82,8 @@ function SalesPageContent() {
         }
       }
     }
-    // Default initial data
-    return [
-      {
-        id: "1",
-        date: "2025-06-02",
-        customerId: "4",
-        customerName: "michael",
-        eggProductionId: "chicken",
-        eggProductionName: "Chicken Eggs",
-        dozens: 3.0,
-        pricePerDozen: 6.0,
-        total: 18.0,
-        pickupMethod: "Pickup in Person",
-        paymentMethod: "Cash",
-        paymentStatus: "Paid",
-        notes: "",
-      },
-    ];
+    // Start with empty sales list
+    return [];
   });
 
   // State for available egg dozens
@@ -161,29 +120,7 @@ function SalesPageContent() {
   });
 
   // State for current month filter
-  const [showCurrentMonthOnly, setShowCurrentMonthOnly] = useState(true);
-
-  // State for showing customer modal
-  const [showCustomerModal, setShowCustomerModal] = useState(false);
-  const [newCustomer, setNewCustomer] = useState<{
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-  }>({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-  });
-
-  // State for delete confirmation modal
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [saleToDelete, setSaleToDelete] = useState<string | null>(null);
-
-  // State for edit sale modal
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [showCurrentMonthOnly] = useState(true);
 
   // Calculate sales summary
   const [salesSummary, setSalesSummary] = useState({
@@ -201,20 +138,18 @@ function SalesPageContent() {
 
   // Calculate daily revenue
   const dailyRevenue = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0]; // Today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split("T")[0];
     return sales
       .filter((sale) => sale.date === today)
       .reduce((sum, sale) => sum + sale.total, 0);
   }, [sales]);
 
-  // Create a memoized filtered sales array to prevent infinite re-renders
+  // Create a memoized filtered sales array
   const filteredSales = useMemo(() => {
-    // First filter by customer ID if present
     const filtered = customerIdFilter
       ? sales.filter((sale) => sale.customerId === customerIdFilter)
       : sales;
 
-    // Then filter by current month if needed
     return showCurrentMonthOnly
       ? filtered.filter((sale) => {
           const saleMonth = new Date(sale.date).getMonth();
@@ -225,13 +160,6 @@ function SalesPageContent() {
         })
       : filtered;
   }, [sales, showCurrentMonthOnly, customerIdFilter]);
-
-  // Save sales to localStorage whenever they change
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("farmhomelife-sales", JSON.stringify(sales));
-    }
-  }, [sales]);
 
   // Update sales summary when filtered sales change
   useEffect(() => {
@@ -248,11 +176,6 @@ function SalesPageContent() {
       averagePrice,
     });
   }, [filteredSales]);
-
-  // Calculate total for new sale
-  const calculateTotal = () => {
-    return newSale.dozens * newSale.pricePerDozen;
-  };
 
   // Handle input change for new sale form
   const handleInputChange = (
@@ -273,7 +196,6 @@ function SalesPageContent() {
   // Handle adding a new sale
   const handleAddSale = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Adding new sale...");
 
     if (newSale.customerId === "") {
       alert("Please select a customer");
@@ -300,23 +222,9 @@ function SalesPageContent() {
       return;
     }
 
-    // Check if enough inventory is available
-    const eggType = selectedEggProduction.type;
-    const availableDozensByType = availableDozens.byType[eggType] || 0;
+    const saleTotal = newSale.dozens * newSale.pricePerDozen;
+    const newSaleId = `sale-${Date.now()}`;
 
-    if (newSale.dozens > availableDozensByType) {
-      alert(
-        `Not enough ${eggType} eggs in inventory. Only ${availableDozensByType.toFixed(
-          1
-        )} dozens available.`
-      );
-      return;
-    }
-
-    const saleTotal = calculateTotal();
-    const newSaleId = `sale-${Date.now()}`; // Use timestamp for unique ID
-
-    // Add the new sale
     const sale: Sale = {
       id: newSaleId,
       date: newSale.date,
@@ -335,11 +243,8 @@ function SalesPageContent() {
       notes: newSale.notes,
     };
 
-    // Update sales state with the new sale at the beginning of the array
     const updatedSales = [sale, ...sales];
     setSales(updatedSales);
-
-    console.log("Sale added:", sale);
 
     // Reset form
     setNewSale({
@@ -356,337 +261,14 @@ function SalesPageContent() {
       notes: "",
     });
 
-    // Update inventory by reducing the sold eggs
-    try {
-      // Get current inventory records
-      const savedRecords = localStorage.getItem("inventoryRecords");
-      if (savedRecords) {
-        const inventoryRecords = JSON.parse(savedRecords);
-
-        // Calculate eggs to deduct (dozens * 12)
-        const eggsToDeduct = newSale.dozens * 12;
-        let remainingToDeduct = eggsToDeduct;
-
-        // Find records with the matching egg type and available eggs
-        const updatedRecords = inventoryRecords.map(
-          (record: InventoryRecord) => {
-            // Skip if not the right egg type or all eggs already deducted
-            if (
-              record.eggType !== selectedEggProduction.type ||
-              remainingToDeduct <= 0
-            ) {
-              return record;
-            }
-
-            // Calculate available eggs in this record
-            // We only count eggs that are not marked as incubated (which includes sold eggs)
-            const availableEggs = record.eggCount - record.incubated;
-            if (availableEggs <= 0) {
-              return record;
-            }
-
-            // Deduct eggs from this record
-            const deductFromThisRecord = Math.min(
-              availableEggs,
-              remainingToDeduct
-            );
-            remainingToDeduct -= deductFromThisRecord;
-
-            // Mark these eggs as sold by adding to incubated (using incubated field as a workaround)
-            return {
-              ...record,
-              incubated: record.incubated + deductFromThisRecord,
-            };
-          }
-        );
-
-        // Save updated inventory back to localStorage
-        localStorage.setItem(
-          "inventoryRecords",
-          JSON.stringify(updatedRecords)
-        );
-
-        // Recalculate available dozens based on updated inventory
-        // This ensures our available dozens calculation is consistent
-        const eggTypeMap: Record<string, number> = {};
-
-        // Calculate total available eggs by type
-        updatedRecords.forEach((record: InventoryRecord) => {
-          const availableEggs = record.eggCount - record.incubated;
-          if (availableEggs > 0) {
-            if (eggTypeMap[record.eggType]) {
-              eggTypeMap[record.eggType] += availableEggs;
-            } else {
-              eggTypeMap[record.eggType] = availableEggs;
-            }
-          }
-        });
-
-        // Convert to dozens and update state
-        const byType: Record<string, number> = {};
-        let totalDozens = 0;
-
-        Object.entries(eggTypeMap).forEach(([type, count]) => {
-          const dozens = parseFloat((count / 12).toFixed(1));
-          byType[type] = dozens;
-          totalDozens += dozens;
-        });
-
-        const newAvailableDozens = {
-          total: totalDozens,
-          byType,
-        };
-
-        setAvailableDozens(newAvailableDozens);
-        localStorage.setItem(
-          "availableDozens",
-          JSON.stringify(newAvailableDozens)
-        );
-      }
-    } catch (error) {
-      console.error("Error updating inventory after sale:", error);
-    }
-
-    // Show confirmation
     alert("Sale added successfully!");
-  };
-
-  // Handle opening edit modal
-  const handleEditSale = (id: string) => {
-    const saleToEdit = sales.find((sale) => sale.id === id);
-    if (saleToEdit) {
-      setEditingSale(saleToEdit);
-      setShowEditModal(true);
-    }
-  };
-
-  // Handle saving edited sale
-  const handleSaveEdit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!editingSale) return;
-
-    // Update the sale in the sales array
-    const updatedSales = sales.map((sale) =>
-      sale.id === editingSale.id ? editingSale : sale
-    );
-
-    // Update state and localStorage
-    setSales(updatedSales);
-    localStorage.setItem("salesRecords", JSON.stringify(updatedSales));
-
-    // Close the modal
-    setShowEditModal(false);
-    setEditingSale(null);
-
-    // Show confirmation
-    alert("Sale updated successfully!");
-  };
-
-  // Handle opening delete confirmation modal
-  const handleDeleteSale = (id: string) => {
-    setSaleToDelete(id);
-    setShowDeleteModal(true);
-  };
-
-  // Handle confirming delete
-  const handleDeleteConfirm = () => {
-    if (saleToDelete) {
-      // Get the sale to be deleted
-      const saleToRemove = sales.find((sale) => sale.id === saleToDelete);
-
-      if (saleToRemove) {
-        // Filter out the deleted sale
-        const updatedSales = sales.filter((sale) => sale.id !== saleToDelete);
-        setSales(updatedSales);
-        localStorage.setItem("salesRecords", JSON.stringify(updatedSales));
-
-        // If the sale was paid, we need to add the eggs back to inventory
-        if (saleToRemove.paymentStatus === "Paid") {
-          try {
-            // Get the egg type from the sale
-            const eggProduction = eggProductions.find(
-              (ep) => ep.id === saleToRemove.eggProductionId
-            );
-
-            if (eggProduction && eggProduction.type) {
-              // Get current inventory records
-              const savedRecords = localStorage.getItem("inventoryRecords");
-              if (savedRecords) {
-                const inventoryRecords = JSON.parse(savedRecords);
-
-                // Calculate eggs to add back (dozens * 12)
-                const eggsToAddBack = saleToRemove.dozens * 12;
-
-                // Find the most recent record with the matching egg type
-                const matchingRecords = inventoryRecords
-                  .filter(
-                    (record: InventoryRecord) =>
-                      record.eggType === eggProduction.type
-                  )
-                  .sort(
-                    (a: InventoryRecord, b: InventoryRecord) =>
-                      new Date(b.date).getTime() - new Date(a.date).getTime()
-                  );
-
-                if (matchingRecords.length > 0) {
-                  // Update the most recent record
-                  const updatedRecords = inventoryRecords.map(
-                    (record: InventoryRecord) => {
-                      if (record.id === matchingRecords[0].id) {
-                        return {
-                          ...record,
-                          incubated: Math.max(
-                            0,
-                            record.incubated - eggsToAddBack
-                          ),
-                        };
-                      }
-                      return record;
-                    }
-                  );
-
-                  // Save updated inventory back to localStorage
-                  localStorage.setItem(
-                    "inventoryRecords",
-                    JSON.stringify(updatedRecords)
-                  );
-
-                  // Recalculate available dozens
-                  const eggTypeMap: Record<string, number> = {};
-
-                  updatedRecords.forEach((record: InventoryRecord) => {
-                    const availableEggs = record.eggCount - record.incubated;
-                    if (availableEggs > 0) {
-                      if (eggTypeMap[record.eggType]) {
-                        eggTypeMap[record.eggType] += availableEggs;
-                      } else {
-                        eggTypeMap[record.eggType] = availableEggs;
-                      }
-                    }
-                  });
-
-                  // Convert to dozens and update state
-                  const byType: Record<string, number> = {};
-                  let totalDozens = 0;
-
-                  Object.entries(eggTypeMap).forEach(([type, count]) => {
-                    const dozens = parseFloat((count / 12).toFixed(1));
-                    byType[type] = dozens;
-                    totalDozens += dozens;
-                  });
-
-                  const newAvailableDozens = {
-                    total: totalDozens,
-                    byType,
-                  };
-
-                  setAvailableDozens(newAvailableDozens);
-                  localStorage.setItem(
-                    "availableDozens",
-                    JSON.stringify(newAvailableDozens)
-                  );
-                }
-              }
-            }
-          } catch (error) {
-            console.error(
-              "Error updating inventory after sale deletion:",
-              error
-            );
-          }
-        }
-      }
-    }
-
-    // Close the modal
-    setShowDeleteModal(false);
-    setSaleToDelete(null);
-  };
-
-  // Handle marking a sale as paid
-  const handleMarkAsPaid = (id: string) => {
-    const updatedSales = sales.map((sale) =>
-      sale.id === id ? { ...sale, paymentStatus: "Paid" } : sale
-    );
-    setSales(updatedSales);
-  };
-
-  // Handle customer input change
-  const handleCustomerInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setNewCustomer((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Handle adding a new customer
-  const handleAddCustomer = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newCustomer.name.trim() === "") {
-      alert("Please enter a customer name");
-      return;
-    }
-
-    const newCustomerId = (customers.length + 1).toString(); // Use same ID format as Customers page
-    const customer: Customer = {
-      id: newCustomerId,
-      name: newCustomer.name,
-      email: newCustomer.email,
-      phone: newCustomer.phone,
-      address: newCustomer.address,
-    };
-
-    const updatedCustomers = [...customers, customer];
-    setCustomers(updatedCustomers);
-
-    // Save to localStorage immediately
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "farmhomelife-customers",
-        JSON.stringify(updatedCustomers)
-      );
-    }
-
-    // Select the new customer in the form
-    setNewSale((prev) => ({ ...prev, customerId: newCustomerId }));
-
-    // Close the modal
-    setShowCustomerModal(false);
-
-    // Reset the form
-    setNewCustomer({
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-    });
-  };
-
-  // Handle closing the customer modal
-  const handleCloseCustomerModal = () => {
-    setShowCustomerModal(false);
-    setNewCustomer({
-      name: "",
-      email: "",
-      phone: "",
-      address: "",
-    });
-  };
-
-  // Toggle current month filter
-  const toggleCurrentMonthFilter = () => {
-    setShowCurrentMonthOnly(!showCurrentMonthOnly);
   };
 
   return (
     <div className="flex h-screen bg-gray-50">
       <DashboardSidebar />
-
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader />
-
         <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
@@ -717,7 +299,6 @@ function SalesPageContent() {
                   </h2>
                 </div>
               </div>
-
               <div className="p-4">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                   <DashboardStatCard
@@ -754,30 +335,19 @@ function SalesPageContent() {
                       {salesSummary.totalDozens.toFixed(2)}
                     </p>
                   </div>
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                    <h3 className="text-sm font-medium text-purple-800 mb-2">
-                      Average Price/Dozen
-                    </h3>
-                    <p className="text-2xl font-bold text-purple-700">
-                      ${salesSummary.averagePrice.toFixed(2)}
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Add New Sale Form */}
             <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
               <div className="p-4 border-b border-gray-200 bg-amber-50">
                 <h2 className="text-lg font-medium text-amber-900">
                   Add New Sale
                 </h2>
               </div>
-
               <div className="p-4">
                 <form onSubmit={handleAddSale} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {/* Date */}
                     <div>
                       <label
                         htmlFor="date"
@@ -795,8 +365,6 @@ function SalesPageContent() {
                         required
                       />
                     </div>
-
-                    {/* Customer */}
                     <div>
                       <label
                         htmlFor="customerId"
@@ -804,46 +372,22 @@ function SalesPageContent() {
                       >
                         Customer <span className="text-red-500">*</span>
                       </label>
-                      <div className="flex space-x-2">
-                        <select
-                          id="customerId"
-                          name="customerId"
-                          value={newSale.customerId}
-                          onChange={handleInputChange}
-                          className="flex-1 px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          required
-                        >
-                          <option value="">Select Customer</option>
-                          {customers.map((customer) => (
-                            <option key={customer.id} value={customer.id}>
-                              {customer.name}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => setShowCustomerModal(true)}
-                          className="px-3 py-2 bg-amber-100 text-amber-800 rounded-md hover:bg-amber-200 transition-colors"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                            />
-                          </svg>
-                        </button>
-                      </div>
+                      <select
+                        id="customerId"
+                        name="customerId"
+                        value={newSale.customerId}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        required
+                      >
+                        <option value="">Select Customer</option>
+                        {customers.map((customer) => (
+                          <option key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
-
-                    {/* Egg Production */}
                     <div>
                       <label
                         htmlFor="eggProductionId"
@@ -867,13 +411,188 @@ function SalesPageContent() {
                         ))}
                       </select>
                     </div>
-
-                    {/* Dozens */}
                     <div>
-                      <div className="flex justify-between items-center">
-                        <label
-                          htmlFor="dozens"
-                          className="block text-sm font-medium text-amber-700 mb-1"
+                      <label
+                        htmlFor="dozens"
+                        className="block text-sm font-medium text-amber-700 mb-1"
+                      >
+                        Dozens <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        id="dozens"
+                        name="dozens"
+                        value={newSale.dozens === 0 ? "" : newSale.dozens}
+                        onChange={handleInputChange}
+                        min="0.25"
+                        step="0.25"
+                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="pricePerDozen"
+                        className="block text-sm font-medium text-amber-700 mb-1"
+                      >
+                        Price per Dozen <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        id="pricePerDozen"
+                        name="pricePerDozen"
+                        value={newSale.pricePerDozen}
+                        onChange={handleInputChange}
+                        min="0"
+                        step="0.25"
+                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="paymentMethod"
+                        className="block text-sm font-medium text-amber-700 mb-1"
+                      >
+                        Payment Method
+                      </label>
+                      <select
+                        id="paymentMethod"
+                        name="paymentMethod"
+                        value={newSale.paymentMethod}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="Check">Check</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Venmo">Venmo</option>
+                        <option value="PayPal">PayPal</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="notes"
+                      className="block text-sm font-medium text-amber-700 mb-1"
+                    >
+                      Notes (Optional)
+                    </label>
+                    <textarea
+                      id="notes"
+                      name="notes"
+                      value={newSale.notes}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="Any additional notes about this sale..."
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                    >
+                      Add Sale
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="p-4 border-b border-gray-200 bg-amber-50">
+                <h2 className="text-lg font-medium text-amber-900">
+                  Recent Sales
+                </h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-amber-200">
+                  <thead className="bg-amber-100">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Egg Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Dozens
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Price/Dozen
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Total
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-amber-100">
+                    {filteredSales.length > 0 ? (
+                      filteredSales.map((sale) => (
+                        <tr key={sale.id} className="hover:bg-amber-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-800">
+                            {sale.date}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-800">
+                            {sale.customerName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-800">
+                            {sale.eggProductionName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-800">
+                            {sale.dozens.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-800">
+                            ${sale.pricePerDozen.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-amber-900">
+                            ${sale.total.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                sale.paymentStatus === "Paid"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {sale.paymentStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="px-6 py-4 text-center text-sm text-gray-500"
                         >
-                          Dozens <span className="text-red-500">*</span>
-                        </label
+                          No sales records found. Add your first sale above.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default function SalesPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SalesPageContent />
+    </Suspense>
+  );
+}

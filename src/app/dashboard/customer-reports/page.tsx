@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
@@ -57,7 +57,7 @@ type Sale = {
   total: number;
 };
 
-export default function CustomerReportsPage() {
+function CustomerReportsPageContent() {
   const searchParams = useSearchParams();
   const selectedCustomerId = searchParams.get("customerId");
 
@@ -494,5 +494,13 @@ export default function CustomerReportsPage() {
         }}
       />
     </>
+  );
+}
+
+export default function CustomerReportsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CustomerReportsPageContent />
+    </Suspense>
   );
 }

@@ -1148,11 +1148,13 @@ export default function InventoryPage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="p-2 border-2 border-gray-200 rounded-md text-sm bg-white bg-opacity-90"
+                    aria-label="Search inventory records"
                   />
                   <select
                     value={methodFilter}
                     onChange={(e) => setMethodFilter(e.target.value)}
                     className="p-2 border-2 border-gray-200 rounded-md text-sm bg-white bg-opacity-90"
+                    aria-label="Filter by pickup method"
                   >
                     <option>All Methods</option>
                     <option>Morning Coop Check</option>
@@ -1164,6 +1166,7 @@ export default function InventoryPage() {
                     value={timeFilter}
                     onChange={(e) => setTimeFilter(e.target.value)}
                     className="p-2 border-2 border-gray-200 rounded-md text-sm bg-white bg-opacity-90"
+                    aria-label="Filter by time period"
                   >
                     <option>Last 7 days</option>
                     <option>Last 30 days</option>
