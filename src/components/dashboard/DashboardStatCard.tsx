@@ -6,6 +6,8 @@ interface DashboardStatCardProps {
   color?: "blue" | "green" | "purple" | "orange" | "red";
   description?: string;
   className?: string;
+  onClick?: () => void;
+  linkTo?: string;
 }
 
 const DashboardStatCard: React.FC<DashboardStatCardProps> = ({
@@ -16,6 +18,8 @@ const DashboardStatCard: React.FC<DashboardStatCardProps> = ({
   color = "blue",
   description,
   className = "",
+  onClick,
+  linkTo,
 }) => {
   // Color mapping for the card icon background
   const colorMap = {
@@ -33,8 +37,17 @@ const DashboardStatCard: React.FC<DashboardStatCardProps> = ({
       ? "text-red-600" 
       : "text-gray-600";
 
+  // Determine if card is clickable
+  const isClickable = onClick || linkTo;
+  
   return (
-    <div className={`bg-white rounded-lg shadow-sm p-6 ${className}`}>
+    <div 
+      className={`bg-white rounded-lg shadow-sm p-6 ${className} ${isClickable ? 'cursor-pointer hover:shadow-md transition-shadow duration-200 hover:translate-y-[-2px]' : ''}`}
+      onClick={onClick}
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      aria-label={isClickable ? `View ${label} details` : undefined}
+    >
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-baseline">
