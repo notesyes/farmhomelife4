@@ -15,8 +15,8 @@ type NavItem = {
 const DashboardSidebar: React.FC = () => {
   const [navItems, setNavItems] = useState<NavItem[]>([
     { name: "Dashboard", href: "/dashboard", icon: "📊", current: true },
-    { name: "Incubation", href: "/dashboard/incubation", icon: "🐥", current: false },
     { name: "Inventory", href: "/dashboard/inventory", icon: "📦", current: false },
+    { name: "Incubation", href: "/dashboard/incubation", icon: "🐥", current: false },
     { name: "Feed", href: "/dashboard/feed", icon: "🌾", current: false },
     { name: "Customers", href: "/dashboard/customers", icon: "👥", current: false },
     { name: "Sales", href: "/dashboard/sales", icon: "💰", current: false },

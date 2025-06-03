@@ -838,9 +838,12 @@ export default function SalesPage() {
                         className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       >
                         <option value="Cash">Cash</option>
+                        <option value="Cash App">Cash App</option>
                         <option value="Credit Card">Credit Card</option>
                         <option value="Venmo">Venmo</option>
                         <option value="PayPal">PayPal</option>
+                        <option value="Zelle">Zelle</option>
+                        <option value="ACH">ACH</option>
                         <option value="Check">Check</option>
                         <option value="Other">Other</option>
                       </select>
