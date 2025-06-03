@@ -2,15 +2,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useSearch } from "@/components/SearchContext";
+import SearchResults from "./SearchResults";
 
 const DashboardHeader: React.FC = () => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const paymentDropdownRef = useRef<HTMLDivElement>(null);
-  
-  // Mock payment data - in a real app, this would come from Stripe API
-  const [paymentData, setPaymentData] = useState({
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [paymentData] = useState({
     currentPlan: "Premium Farm",
     nextBillingDate: "July 3, 2025",
     amount: "$29.99",
@@ -25,14 +24,20 @@ const DashboardHeader: React.FC = () => {
       expiry: "12/26"
     }
   });
+  const profileRef = useRef<HTMLDivElement>(null);
+  const paymentRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Get search context
+  const { searchQuery, setSearchQuery, performSearch, clearSearch } = useSearch();
   
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
       }
-      if (paymentDropdownRef.current && !paymentDropdownRef.current.contains(event.target as Node)) {
+      if (paymentRef.current && !paymentRef.current.contains(event.target as Node)) {
         setIsPaymentDropdownOpen(false);
       }
     };
@@ -43,8 +48,8 @@ const DashboardHeader: React.FC = () => {
     };
   }, []);
   
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  const toggleProfileDropdown = () => {
+    setIsProfileDropdownOpen(!isProfileDropdownOpen);
   };
   
   const togglePaymentDropdown = () => {
@@ -70,17 +75,57 @@ const DashboardHeader: React.FC = () => {
                 </svg>
               </div>
               <input
+                ref={searchInputRef}
                 type="text"
-                placeholder="Search..."
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-gray-700"
+                placeholder="Search across all data..."
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm text-gray-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value.trim()) {
+                    setShowSearchResults(true);
+                    performSearch(e.target.value);
+                  } else {
+                    setShowSearchResults(false);
+                    clearSearch();
+                  }
+                }}
+                onFocus={() => {
+                  if (searchQuery.trim()) {
+                    setShowSearchResults(true);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    performSearch(searchQuery);
+                  } else if (e.key === 'Escape') {
+                    clearSearch();
+                    setShowSearchResults(false);
+                    searchInputRef.current?.blur();
+                  }
+                }}
               />
+              {searchQuery && (
+                <button
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => {
+                    clearSearch();
+                    setShowSearchResults(false);
+                  }}
+                >
+                  <svg className="h-5 w-5 text-gray-400 hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
+              {showSearchResults && searchQuery && <SearchResults />}
             </div>
           </div>
 
           {/* Right side icons */}
           <div className="flex items-center space-x-4">
             {/* Payment Information */}
-            <div className="relative" ref={paymentDropdownRef}>
+            <div className="relative" ref={paymentRef}>
               <button 
                 className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 relative"
                 onClick={togglePaymentDropdown}
@@ -155,10 +200,10 @@ const DashboardHeader: React.FC = () => {
             </button>
 
             {/* Profile dropdown */}
-            <div className="relative" ref={dropdownRef}>
+            <div className="relative" ref={profileRef}>
               <button 
                 className="flex items-center space-x-2 focus:outline-none"
-                onClick={toggleDropdown}
+                onClick={toggleProfileDropdown}
               >
                 <img
                   className="h-8 w-8 rounded-full"
@@ -172,7 +217,7 @@ const DashboardHeader: React.FC = () => {
               </button>
               
               {/* Dropdown menu */}
-              {isDropdownOpen && (
+              {isProfileDropdownOpen && (
                 <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 z-10">
                   <Link href="/dashboard/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     Your Profile

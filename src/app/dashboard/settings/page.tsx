@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
+  
   const [formData, setFormData] = useState({
     emailNotifications: true,
     smsNotifications: false,
@@ -16,11 +19,24 @@ export default function SettingsPage() {
     dateFormat: "MM/DD/YYYY",
     theme: "light"
   });
+  
+  // Sync form data with theme provider
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      theme: theme
+    }));
+  }, [theme]);
 
   const [isSaving, setIsSaving] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
+    
+    if (name === 'theme') {
+      // Update theme in the provider
+      setTheme(value as 'light' | 'dark' | 'system');
+    }
     
     setFormData(prev => ({
       ...prev,
@@ -32,11 +48,23 @@ export default function SettingsPage() {
     e.preventDefault();
     setIsSaving(true);
     
-    // Simulate API call to save settings
-    setTimeout(() => {
+    // Save settings to localStorage
+    try {
+      localStorage.setItem('userSettings', JSON.stringify(formData));
+      
+      // Ensure theme is saved separately for the theme provider
+      localStorage.setItem('theme', formData.theme);
+      
+      // Simulate API call delay
+      setTimeout(() => {
+        setIsSaving(false);
+        alert('Settings saved successfully!');
+      }, 1000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
       setIsSaving(false);
-      // Show success message or notification here
-    }, 1000);
+      alert('There was an error saving your settings. Please try again.');
+    }
   };
 
   return (
