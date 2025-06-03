@@ -232,10 +232,6 @@ export default function IncubationPage() {
   const [compatibilityWarnings, setCompatibilityWarnings] = useState<CompatibilityWarning[]>([]);
   const [temperature, setTemperature] = useState<number>(99.5);
   const [humidity, setHumidity] = useState<number>(55);
-  const [batchName, setBatchName] = useState<string>('');
-  const [eggCount, setEggCount] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [notes, setNotes] = useState<string>('');
   // const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>("F");
   
   // Form state - commented out until form implementation is complete
@@ -354,8 +350,6 @@ export default function IncubationPage() {
                       type="text" 
                       className="w-full px-3 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white text-amber-900" 
                       placeholder="Spring Chickens 2025"
-                      value={batchName}
-                      onChange={(e) => setBatchName(e.target.value)}
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -391,8 +385,6 @@ export default function IncubationPage() {
                         min="1"
                         className="w-full px-3 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white text-amber-900" 
                         placeholder="24"
-                        value={eggCount}
-                        onChange={(e) => setEggCount(e.target.value)}
                       />
                     </div>
                   </div>
@@ -401,8 +393,7 @@ export default function IncubationPage() {
                     <input 
                       type="date" 
                       className="w-full px-3 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white text-amber-900" 
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
+                      defaultValue={format(new Date(), 'yyyy-MM-dd')}
                     />
                   </div>
                   
@@ -511,8 +502,6 @@ export default function IncubationPage() {
                       rows={3}
                       className="w-full px-3 py-2 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white text-amber-900" 
                       placeholder="Any special notes about this batch..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
                     ></textarea>
                   </div>
                   <div className="flex justify-end space-x-3 pt-2">
@@ -527,59 +516,7 @@ export default function IncubationPage() {
                       type="button"
                       className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-500 text-white rounded-lg shadow-md hover:translate-y-[-2px] hover:shadow-lg transition duration-300"
                       onClick={() => {
-                        // Validate form
-                        if (!batchName.trim()) {
-                          alert('Please enter a batch name');
-                          return;
-                        }
-                        if (!selectedSpecies) {
-                          alert('Please select a species');
-                          return;
-                        }
-                        if (!eggCount || parseInt(eggCount) <= 0) {
-                          alert('Please enter a valid egg count');
-                          return;
-                        }
-
-                        // Calculate expected hatch date based on species
-                        const incubationDays = selectedSpecies ? speciesData[selectedSpecies].incubationDays : 21;
-                        const startDateObj = new Date(startDate);
-                        const expectedHatchDate = new Date(startDateObj);
-                        expectedHatchDate.setDate(startDateObj.getDate() + incubationDays);
-
-                        // Create new batch
-                        const newBatch: EggBatch = {
-                          id: `batch-${Date.now()}`,
-                          batchName: batchName,
-                          startDate: startDateObj.toISOString(),
-                          species: selectedSpecies,
-                          varieties: selectedBreeds,
-                          eggCount: parseInt(eggCount),
-                          notes: notes,
-                          status: 'incubating',
-                          temperature: temperature,
-                          humidity: humidity,
-                          expectedHatchDate: expectedHatchDate.toISOString(),
-                          daysRemaining: incubationDays,
-                          lastTurned: new Date().toISOString(),
-                          lastCandled: new Date().toISOString()
-                        };
-
-                        // Add to batches
-                        setBatches(prev => [newBatch, ...prev]);
-
-                        // Reset form
-                        setBatchName('');
-                        setSelectedSpecies('');
-                        setSelectedBreeds([]);
-                        setEggCount('');
-                        setStartDate(format(new Date(), 'yyyy-MM-dd'));
-                        setNotes('');
-                        setTemperature(99.5);
-                        setHumidity(55);
-                        setCompatibilityWarnings([]);
-                        
-                        // Close form
+                        alert('This feature is not fully implemented yet!');
                         setShowAddForm(false);
                       }}
                     >
