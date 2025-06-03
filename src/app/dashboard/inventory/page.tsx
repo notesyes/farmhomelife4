@@ -26,6 +26,7 @@ type InventoryRecord = {
   eggCount: number;
   pickupTime: string;
   pickupMethod: string;
+  eggType: string;
   broken: number;
   incubated: number;
   weather: string;
@@ -77,6 +78,7 @@ export default function InventoryPage() {
     eggCount: 0,
     pickupTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
     pickupMethod: "",
+    eggType: "",
     incubated: 0,
     broken: 0,
     weather: "",
@@ -98,31 +100,127 @@ export default function InventoryPage() {
     notes: ""
   });
 
+  // Function to calculate available dozens for sale
+  const calculateAvailableDozens = (records: InventoryRecord[]) => {
+    const eggTypeMap: Record<string, number> = {};
+    
+    // Calculate total available eggs by type
+    // Only count eggs that are not broken and not marked for other purposes (incubated/sold)
+    records.forEach(record => {
+      // We only count eggs that are not broken and not marked for other purposes
+      const availableEggs = record.eggCount - record.incubated;
+      if (availableEggs > 0) {
+        if (eggTypeMap[record.eggType]) {
+          eggTypeMap[record.eggType] += availableEggs;
+        } else {
+          eggTypeMap[record.eggType] = availableEggs;
+        }
+      }
+    });
+    
+    // Convert to dozens and return both total and by type
+    const byType: Record<string, number> = {};
+    let totalDozens = 0;
+    
+    Object.entries(eggTypeMap).forEach(([type, count]) => {
+      // Calculate dozens with one decimal place precision
+      const dozens = (count / 12).toFixed(1);
+      byType[type] = parseFloat(dozens);
+      totalDozens += parseFloat(dozens);
+    });
+    
+    // Store in localStorage for access by the Sales page
+    localStorage.setItem('availableDozens', JSON.stringify({
+      total: totalDozens,
+      byType
+    }));
+    
+    return {
+      total: totalDozens,
+      byType
+    };
+  };
+  
   // State for inventory records
   const initialFormState = {
     date: new Date().toISOString().split('T')[0],
     eggCount: 0,
     pickupTime: '',
     pickupMethod: '',
+    eggType: '',
     broken: 0,
     incubated: 0,
     weather: '',
     notes: ''
   };
 
-  const [inventoryRecords, setInventoryRecords] = useState<InventoryRecord[]>([
-    {
-      id: "rec1",
-      date: new Date().toISOString().split('T')[0],
-      eggCount: 50,
-      pickupTime: "15:37",
-      pickupMethod: "Evening Collection",
-      incubated: 25,
-      broken: 25,
-      weather: "cloudy",
-      notes: "Mixed sizes, some soft shells"
+  const [inventoryRecords, setInventoryRecords] = useState<InventoryRecord[]>([]);
+  const [availableDozens, setAvailableDozens] = useState({ total: 0, byType: {} });
+  
+  // Load inventory records from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedRecords = localStorage.getItem('inventoryRecords');
+      if (savedRecords) {
+        setInventoryRecords(JSON.parse(savedRecords));
+      } else {
+        // Default data if nothing is saved
+        const defaultRecords = [
+          {
+            id: "rec1",
+            date: new Date().toISOString().split('T')[0],
+            eggCount: 50,
+            pickupTime: "15:37",
+            pickupMethod: "Evening Collection",
+            eggType: "Chicken",
+            incubated: 25,
+            broken: 25,
+            weather: "cloudy",
+            notes: "Mixed sizes, some soft shells"
+          }
+        ];
+        setInventoryRecords(defaultRecords);
+        localStorage.setItem('inventoryRecords', JSON.stringify(defaultRecords));
+      }
+    } catch (error) {
+      console.error('Error loading inventory records from localStorage:', error);
     }
-  ]);
+  }, []);
+  
+  // Save inventory records to localStorage whenever they change
+  useEffect(() => {
+    if (inventoryRecords.length > 0) {
+      localStorage.setItem('inventoryRecords', JSON.stringify(inventoryRecords));
+      
+      // Calculate available dozens whenever inventory changes
+      const dozens = calculateAvailableDozens(inventoryRecords);
+      setAvailableDozens(dozens);
+      
+      // Save available dozens to localStorage for use in sales page
+      localStorage.setItem('availableEggDozens', JSON.stringify(dozens));
+    } else {
+      // If there are no inventory records, set available dozens to zero
+      const emptyDozens = { total: 0, byType: {} };
+      setAvailableDozens(emptyDozens);
+      localStorage.setItem('availableEggDozens', JSON.stringify(emptyDozens));
+    }
+  }, [inventoryRecords]);
+  
+  // Reset egg inventory count to zero
+  const resetEggInventory = () => {
+    const emptyDozens = { total: 0, byType: {} };
+    setAvailableDozens(emptyDozens);
+    localStorage.setItem('availableEggDozens', JSON.stringify(emptyDozens));
+    alert('Egg inventory has been reset to zero');
+  };
+  
+  // Reset egg inventory to zero on component mount
+  useEffect(() => {
+    // Reset egg inventory to zero
+    const emptyDozens = { total: 0, byType: {} };
+    setAvailableDozens(emptyDozens);
+    localStorage.setItem('availableEggDozens', JSON.stringify(emptyDozens));
+  }, []);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -142,6 +240,7 @@ export default function InventoryPage() {
       eggCount: 0,
       pickupTime: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
       pickupMethod: "",
+      eggType: "",
       incubated: 0,
       broken: 0,
       weather: "",
@@ -154,9 +253,30 @@ export default function InventoryPage() {
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
+    let parsedValue = value;
+    
+    // Convert numeric values to numbers
+    if (id === 'eggCount' || id === 'broken' || id === 'incubated') {
+      parsedValue = value === '' ? 0 : parseInt(value, 10);
+      // Ensure TypeScript knows this is a number
+      return setFormData(prev => ({ ...prev, [id]: parsedValue as number }));
+    }
+    
+    setFormData(prev => ({ ...prev, [id]: parsedValue }));
+  };
+
+  // Clear form function
+  const handleClearForm = () => {
     setFormData({
-      ...formData,
-      [id]: id === "eggCount" || id === "incubated" || id === "broken" ? parseInt(value) || 0 : value
+      date: new Date().toISOString().split('T')[0],
+      eggCount: 0,
+      pickupTime: '',
+      pickupMethod: '',
+      eggType: '',
+      broken: 0,
+      incubated: 0,
+      weather: '',
+      notes: ''
     });
   };
 
@@ -202,34 +322,41 @@ export default function InventoryPage() {
       return;
     }
     
+    if (!formData.pickupMethod) {
+      alert("Please select a pickup method");
+      return;
+    }
+    
+    // Create a complete record with all fields
+    const completeRecord: InventoryRecord = {
+      id: isEditing && editingId ? editingId : `record-${Date.now()}`,
+      date: formData.date,
+      eggCount: typeof formData.eggCount === 'number' ? formData.eggCount : parseInt(formData.eggCount.toString(), 10),
+      pickupTime: formData.pickupTime,
+      pickupMethod: formData.pickupMethod,
+      eggType: formData.eggType || 'Chicken', // Default to Chicken if not specified
+      incubated: typeof formData.incubated === 'number' ? formData.incubated : parseInt(formData.incubated.toString(), 10),
+      broken: typeof formData.broken === 'number' ? formData.broken : parseInt(formData.broken.toString(), 10),
+      weather: formData.weather,
+      notes: formData.notes
+    };
+    
     if (isEditing && editingId) {
       // Update existing record
-      const updatedRecords = inventoryRecords.map(record => {
-        if (record.id === editingId) {
-          return {
-            ...record,
-            date: formData.date || record.date,
-            eggCount: formData.eggCount || 0,
-            pickupTime: formData.pickupTime || "",
-            pickupMethod: formData.pickupMethod || "",
-            incubated: formData.incubated || 0,
-            broken: formData.broken || 0,
-            weather: formData.weather || "",
-            notes: formData.notes || ""
-          };
-        }
-        return record;
-      });
+      const updatedRecords = inventoryRecords.map(record => 
+        record.id === editingId ? completeRecord : record
+      );
       
       setInventoryRecords(updatedRecords);
+      localStorage.setItem('inventoryRecords', JSON.stringify(updatedRecords));
       setIsEditing(false);
+      // showSuccessMessage("Record updated successfully!");
     } else {
       // Add new record
-      const newRecord = {
-        ...formData,
-        id: `record-${Date.now()}`
-      };
-      setInventoryRecords([...inventoryRecords, newRecord]);
+      const updatedRecords = [...inventoryRecords, completeRecord];
+      setInventoryRecords(updatedRecords);
+      localStorage.setItem('inventoryRecords', JSON.stringify(updatedRecords));
+      // showSuccessMessage("New egg record added successfully!");
     }
     
     // Reset form
@@ -263,26 +390,20 @@ export default function InventoryPage() {
 
   // Handle confirm delete
   const handleConfirmDelete = () => {
-    if (!recordToDelete) return;
-    
-    try {
-      // Filter out the record to delete
+    if (recordToDelete) {
+      // Remove the record from the array
       const updatedRecords = inventoryRecords.filter(record => record.id !== recordToDelete);
       setInventoryRecords(updatedRecords);
       
       // Save to localStorage
       localStorage.setItem('inventoryRecords', JSON.stringify(updatedRecords));
       
-      // Close modal
+      // Close the modal and reset state
       setShowDeleteModal(false);
       setRecordToDelete(null);
       
       // Show success message
-      showSuccessMessage('Record deleted successfully!');
-    } catch (error) {
-      console.error("Error deleting record:", error);
-      setShowDeleteModal(false);
-      setRecordToDelete(null);
+      showSuccessMessage("Record deleted successfully!");
     }
   };
 
@@ -297,7 +418,6 @@ export default function InventoryPage() {
 
   const totalThisWeek = thisWeekRecords.reduce((sum: number, record: InventoryRecord) => sum + record.eggCount, 0);
   const dailyAverage = thisWeekRecords.length > 0 ? (totalThisWeek / thisWeekRecords.length).toFixed(1) : "0";
-  const brokenThisWeek = thisWeekRecords.reduce((sum: number, record: InventoryRecord) => sum + record.broken, 0);
 
   // Calculate trend vs last week
   const lastWeekRecords = inventoryRecords.filter((record: InventoryRecord) => {
@@ -505,11 +625,22 @@ export default function InventoryPage() {
               <p className="text-amber-800">Monitor your daily egg production with smart insights and analytics</p>
             </div>
 
-            {/* Statistics Dashboard */}
+            {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl p-6 text-center shadow-md border border-white border-opacity-30 transform transition hover:translate-y-[-5px] hover:shadow-lg">
                 <div className="text-4xl font-bold text-amber-600 mb-2">{totalThisWeek}</div>
-                <div className="text-sm font-medium uppercase tracking-wide text-amber-800">This Week</div>
+                <div className="text-sm font-medium uppercase tracking-wide text-amber-800">Eggs This Week</div>
+              </div>
+              <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl p-6 text-center shadow-md border border-white border-opacity-30 transform transition hover:translate-y-[-5px] hover:shadow-lg">
+                <div className="text-4xl font-bold text-green-600 mb-2">{Math.floor(availableDozens.total)}</div>
+                <div className="text-sm font-medium uppercase tracking-wide text-green-800">Dozens Available</div>
+                <div className="text-xs text-gray-500 mt-1">Available for sale</div>
+                <button
+                  onClick={resetEggInventory}
+                  className="mt-2 px-3 py-1 text-xs bg-amber-500 text-white rounded-md hover:bg-amber-600 transition"
+                >
+                  Reset to Zero
+                </button>
               </div>
               <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl p-6 text-center shadow-md border border-white border-opacity-30 transform transition hover:translate-y-[-5px] hover:shadow-lg">
                 <div className="text-4xl font-bold text-amber-600 mb-2">{dailyAverage}</div>
@@ -519,10 +650,6 @@ export default function InventoryPage() {
                 <div className={`text-4xl font-bold mb-2 ${trendDirection === "up" ? "text-emerald-600" : "text-red-600"}`}>
                   {trendDirection === "up" ? "↗" : "↘"} {Math.abs(trend)}%</div>
                 <div className="text-sm font-medium uppercase tracking-wide text-amber-800">vs Last Week</div>
-              </div>
-              <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-xl p-6 text-center shadow-md border border-white border-opacity-30 transform transition hover:translate-y-[-5px] hover:shadow-lg">
-                <div className="text-4xl font-bold text-amber-600 mb-2">{brokenThisWeek}</div>
-                <div className="text-sm font-medium uppercase tracking-wide text-amber-800">Broken This Week</div>
               </div>
             </div>
 
@@ -584,6 +711,23 @@ export default function InventoryPage() {
                       <option value="Evening Collection">Evening Collection</option>
                       <option value="Free Range Pickup">Free Range Pickup</option>
                       <option value="Nest Box Collection">Nest Box Collection</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-4">
+                    <label htmlFor="eggType" className="block text-amber-800 font-medium mb-2">Egg Type</label>
+                    <select 
+                      id="eggType" 
+                      value={formData.eggType}
+                      onChange={handleInputChange}
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-white bg-opacity-90"
+                    >
+                      <option value="">Select Egg Type</option>
+                      <option value="Chicken">Chicken</option>
+                      <option value="Duck">Duck</option>
+                      <option value="Quail">Quail</option>
+                      <option value="Goose">Goose</option>
+                      <option value="Turkey">Turkey</option>
                     </select>
                   </div>
 

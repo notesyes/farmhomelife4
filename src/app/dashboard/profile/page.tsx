@@ -1,21 +1,35 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import { useUser } from "@/components/UserContext";
+import Image from "next/image";
 
 export default function ProfilePage() {
-  // Mock user data
+  // Get user context
+  const { profileImage, userName, setProfileImage, setUserName } = useUser();
+  
+  // User data
   const [userData, setUserData] = useState({
-    name: "John Doe",
+    name: userName,
     email: "john.doe@example.com",
     role: "Farm Owner",
     location: "Green Valley, CA",
     phone: "(555) 123-4567",
     bio: "I've been running my small egg farm for over 5 years. Focused on organic, free-range egg production with sustainable practices.",
-    profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+    profileImage: profileImage
   });
+  
+  // Update userData when context changes
+  useEffect(() => {
+    setUserData(prev => ({
+      ...prev,
+      name: userName,
+      profileImage: profileImage
+    }));
+  }, [userName, profileImage]);
   
   // File upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +79,11 @@ export default function ProfilePage() {
     // Simulate API call to update user profile
     setTimeout(() => {
       setUserData(formData);
+      
+      // Update the user context
+      setUserName(formData.name);
+      setProfileImage(formData.profileImage);
+      
       setIsSaving(false);
       setIsEditing(false);
     }, 1000);
@@ -104,9 +123,11 @@ export default function ProfilePage() {
               <div className="bg-emerald-700 h-32 relative">
                 <div className="absolute bottom-0 left-8 transform translate-y-1/2">
                   <div className="h-24 w-24 rounded-full border-4 border-white overflow-hidden bg-white relative group">
-                    <img 
+                    <Image 
                       src={isEditing ? formData.profileImage : userData.profileImage} 
                       alt="Profile" 
+                      width={96}
+                      height={96}
                       className="h-full w-full object-cover"
                     />
                     {isEditing && (

@@ -6,10 +6,21 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import Script from "next/script";
 
+// Add type declaration for jspdf on window object
+declare global {
+  interface Window {
+    jspdf: {
+      jsPDF: new () => any;
+    };
+  }
+}
+
 // Types for our customer data
 type Customer = {
   id: string;
   name: string;
+  email: string;
+  phone: string;
   dozensPurchased: number;
   totalSales: number;
 };
@@ -25,16 +36,30 @@ type Sale = {
 };
 
 export default function CustomersPage() {
-  // Mock data for customers
-  const [customers, setCustomers] = useState<Customer[]>([
-    { id: "1", name: "juan", dozensPurchased: 3.00, totalSales: 18.00 },
-    { id: "2", name: "Juan Sanchez's", dozensPurchased: 0.00, totalSales: 0.00 },
-    { id: "3", name: "machelle", dozensPurchased: 0.00, totalSales: 0.00 },
-    { id: "4", name: "michael", dozensPurchased: 3.00, totalSales: 18.00 },
-    { id: "5", name: "natasha", dozensPurchased: 0.00, totalSales: 0.00 },
-    { id: "6", name: "Peter", dozensPurchased: 0.00, totalSales: 0.00 },
-    { id: "7", name: "sage", dozensPurchased: 1.00, totalSales: 6.00 },
-  ]);
+  // Customer data with localStorage persistence
+  const [customers, setCustomers] = useState<Customer[]>(() => {
+    // Check if we're in the browser environment
+    if (typeof window !== 'undefined') {
+      const savedCustomers = localStorage.getItem('farmhomelife-customers');
+      if (savedCustomers) {
+        try {
+          return JSON.parse(savedCustomers);
+        } catch (e) {
+          console.error('Error parsing saved customers:', e);
+        }
+      }
+    }
+    // Default initial data
+    return [
+      { id: "1", name: "juan", email: "juan@example.com", phone: "555-123-4567", dozensPurchased: 3.00, totalSales: 18.00 },
+      { id: "2", name: "Juan Sanchez's", email: "jsanchez@example.com", phone: "555-234-5678", dozensPurchased: 0.00, totalSales: 0.00 },
+      { id: "3", name: "machelle", email: "machelle@example.com", phone: "555-345-6789", dozensPurchased: 0.00, totalSales: 0.00 },
+      { id: "4", name: "michael", email: "michael@example.com", phone: "555-456-7890", dozensPurchased: 3.00, totalSales: 18.00 },
+      { id: "5", name: "natasha", email: "natasha@example.com", phone: "555-567-8901", dozensPurchased: 0.00, totalSales: 0.00 },
+      { id: "6", name: "Peter", email: "peter@example.com", phone: "555-678-9012", dozensPurchased: 0.00, totalSales: 0.00 },
+      { id: "7", name: "sage", email: "sage@example.com", phone: "555-789-0123", dozensPurchased: 1.00, totalSales: 6.00 },
+    ];
+  });
 
   // Mock data for recent sales
   const [recentSales, setRecentSales] = useState<Sale[]>([
@@ -70,8 +95,17 @@ export default function CustomersPage() {
   // State for the new customer form
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
-    name: ""
+    name: "",
+    email: "",
+    phone: ""
   });
+  
+  // Save customers to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('farmhomelife-customers', JSON.stringify(customers));
+    }
+  }, [customers]);
 
   // State for editing customer
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
@@ -101,12 +135,14 @@ export default function CustomersPage() {
       {
         id: newCustomerId,
         name: newCustomer.name,
+        email: newCustomer.email,
+        phone: newCustomer.phone,
         dozensPurchased: 0,
         totalSales: 0
       }
     ]);
     
-    setNewCustomer({ name: "" });
+    setNewCustomer({ name: "", email: "", phone: "" });
     setIsAddingCustomer(false);
   };
 
@@ -197,10 +233,10 @@ export default function CustomersPage() {
   // Function to handle downloading customer data as PDF
   const handleDownloadPDF = () => {
     // Check if jsPDF is available
-    if (typeof window !== 'undefined' && (window as any).jspdf) {
+    if (typeof window !== 'undefined' && window.jspdf) {
       try {
         // Create a new jsPDF instance
-        const { jsPDF } = (window as any).jspdf;
+        const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
         // Add title
@@ -326,21 +362,49 @@ export default function CustomersPage() {
               {/* Add Customer Form */}
               {isAddingCustomer && (
                 <div className="p-4 bg-amber-50 border-b border-amber-100">
-                  <form onSubmit={handleAddCustomer} className="flex items-end space-x-4">
-                    <div className="flex-1">
-                      <label htmlFor="customerName" className="block text-sm font-medium text-amber-700 mb-1">
-                        Customer Name
-                      </label>
-                      <input
-                        type="text"
-                        id="customerName"
-                        value={newCustomer.name}
-                        onChange={(e) => setNewCustomer({ name: e.target.value })}
-                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Enter customer name"
-                      />
+                  <form onSubmit={handleAddCustomer} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label htmlFor="customerName" className="block text-sm font-medium text-amber-700 mb-1">
+                          Customer Name
+                        </label>
+                        <input
+                          type="text"
+                          id="customerName"
+                          value={newCustomer.name}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                          className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          placeholder="Enter customer name"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="customerEmail" className="block text-sm font-medium text-amber-700 mb-1">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          id="customerEmail"
+                          value={newCustomer.email}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                          className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          placeholder="Enter email address"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="customerPhone" className="block text-sm font-medium text-amber-700 mb-1">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          id="customerPhone"
+                          value={newCustomer.phone}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                          className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          placeholder="Enter phone number"
+                        />
+                      </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex justify-end space-x-2">
                       <button
                         type="submit"
                         className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
@@ -362,21 +426,48 @@ export default function CustomersPage() {
               {/* Edit Customer Form */}
               {isEditingCustomer && editingCustomer && (
                 <div className="p-4 bg-amber-50 border-b border-amber-100">
-                  <form onSubmit={handleEditCustomer} className="flex items-end space-x-4">
-                    <div className="flex-1">
-                      <label htmlFor="editCustomerName" className="block text-sm font-medium text-amber-700 mb-1">
-                        Edit Customer Name
-                      </label>
-                      <input
-                        type="text"
-                        id="editCustomerName"
-                        value={editingCustomer.name}
-                        onChange={(e) => setEditingCustomer({ ...editingCustomer, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Enter customer name"
-                      />
+                  <form onSubmit={handleEditCustomer} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label htmlFor="editCustomerName" className="block text-sm font-medium text-amber-700 mb-1">
+                          Edit Customer Name
+                        </label>
+                        <input
+                          type="text"
+                          id="editCustomerName"
+                          value={editingCustomer.name}
+                          onChange={(e) => setEditingCustomer({ ...editingCustomer, name: e.target.value })}
+                          className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="editCustomerEmail" className="block text-sm font-medium text-amber-700 mb-1">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          id="editCustomerEmail"
+                          value={editingCustomer.email || ''}
+                          onChange={(e) => setEditingCustomer({ ...editingCustomer, email: e.target.value })}
+                          className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          placeholder="Enter email address"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="editCustomerPhone" className="block text-sm font-medium text-amber-700 mb-1">
+                          Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          id="editCustomerPhone"
+                          value={editingCustomer.phone || ''}
+                          onChange={(e) => setEditingCustomer({ ...editingCustomer, phone: e.target.value })}
+                          className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          placeholder="Enter phone number"
+                        />
+                      </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex justify-end space-x-2">
                       <button
                         type="submit"
                         className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
@@ -478,6 +569,12 @@ export default function CustomersPage() {
                         Customer
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
                         Dozens Purchased
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
@@ -495,6 +592,12 @@ export default function CustomersPage() {
                           {customer.name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-800">
+                          {customer.email || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-800">
+                          {customer.phone || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-800">
                           {customer.dozensPurchased.toFixed(2)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-amber-800">
@@ -507,8 +610,8 @@ export default function CustomersPage() {
                               className="px-3 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors"
                             >
                               <span className="flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
                                 Edit
                               </span>

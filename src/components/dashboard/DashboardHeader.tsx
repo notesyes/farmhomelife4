@@ -3,7 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSearch } from "@/components/SearchContext";
+import { useUser } from "@/components/UserContext";
 import SearchResults from "./SearchResults";
+import Image from "next/image";
 
 const DashboardHeader: React.FC = () => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -205,12 +207,16 @@ const DashboardHeader: React.FC = () => {
                 className="flex items-center space-x-2 focus:outline-none"
                 onClick={toggleProfileDropdown}
               >
-                <img
-                  className="h-8 w-8 rounded-full"
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                  alt="User avatar"
-                />
-                <span className="hidden md:block text-sm font-medium text-gray-700">John Doe</span>
+                <div className="h-8 w-8 rounded-full overflow-hidden">
+                  <Image
+                    className="h-full w-full object-cover"
+                    src={useUser().profileImage}
+                    alt="User avatar"
+                    width={32}
+                    height={32}
+                  />
+                </div>
+                <span className="hidden md:block text-sm font-medium text-gray-700">{useUser().userName}</span>
                 <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>

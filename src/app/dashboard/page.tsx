@@ -429,12 +429,13 @@ export default function DashboardPage() {
                 onClick={() => router.push('/dashboard/inventory')}
               />
               <DashboardStatCard 
-                value={dashboardStats.eggsRejected}
-                label="Broken Eggs"
-                trend={dashboardStats.rejectionTrend}
-                color="red"
-                description="Damaged or unusable eggs"
-                onClick={() => router.push('/dashboard/inventory')}
+                value={parseFloat(localStorage.getItem('availableDozens') ? 
+                  JSON.parse(localStorage.getItem('availableDozens') || '{}').total || 0 : 0)}
+                label="Dozens Available"
+                trend="+0.0%"
+                color="green"
+                description="Eggs available for sale"
+                onClick={() => router.push('/dashboard/sales')}
               />
               <DashboardStatCard 
                 value={incubationBatches
@@ -448,11 +449,11 @@ export default function DashboardPage() {
               />
               <DashboardStatCard 
                 value={dashboardStats.dailyRevenue}
-                label="Daily Revenue"
+                label="Today's Total Sales"
                 unit="$"
                 trend={dashboardStats.revenueTrend}
                 color="green"
-                description="Based on today's sales"
+                description="Total revenue from today's sales"
                 onClick={() => router.push('/dashboard/sales')}
               />
               <DashboardStatCard 

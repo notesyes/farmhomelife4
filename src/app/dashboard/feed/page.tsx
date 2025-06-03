@@ -54,6 +54,16 @@ export default function FeedPage() {
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [showUsageForm, setShowUsageForm] = useState(false);
   
+  // State for edit and delete modals
+  const [showPurchaseEditModal, setShowPurchaseEditModal] = useState(false);
+  const [showUsageEditModal, setShowUsageEditModal] = useState(false);
+  const [showPurchaseDeleteModal, setShowPurchaseDeleteModal] = useState(false);
+  const [showUsageDeleteModal, setShowUsageDeleteModal] = useState(false);
+  const [purchaseToEdit, setPurchaseToEdit] = useState<FeedPurchase | null>(null);
+  const [usageToEdit, setUsageToEdit] = useState<FeedUsage | null>(null);
+  const [purchaseToDelete, setPurchaseToDelete] = useState<string | null>(null);
+  const [usageToDelete, setUsageToDelete] = useState<string | null>(null);
+  
   // Load feed data from localStorage
   useEffect(() => {
     const savedPurchases = localStorage.getItem('feedPurchases');
@@ -224,6 +234,126 @@ export default function FeedPage() {
     });
     
     setShowUsageForm(false);
+  };
+  
+  // Handle opening edit modal for purchase
+  const handleEditPurchase = (id: string) => {
+    const purchase = feedPurchases.find(p => p.id === id);
+    if (purchase) {
+      setPurchaseToEdit(purchase);
+      setShowPurchaseEditModal(true);
+    }
+  };
+  
+  // Handle saving edited purchase
+  const handleSaveEditPurchase = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!purchaseToEdit) return;
+    
+    // Update the purchase in the purchases array
+    const updatedPurchases = feedPurchases.map(purchase => 
+      purchase.id === purchaseToEdit.id ? purchaseToEdit : purchase
+    );
+    
+    // Update state and localStorage
+    setFeedPurchases(updatedPurchases);
+    localStorage.setItem('feedPurchases', JSON.stringify(updatedPurchases));
+    
+    // Close the modal
+    setShowPurchaseEditModal(false);
+    setPurchaseToEdit(null);
+    
+    // Show confirmation
+    alert("Purchase updated successfully!");
+  };
+  
+  // Handle opening delete confirmation modal for purchase
+  const handleDeletePurchase = (id: string) => {
+    setPurchaseToDelete(id);
+    setShowPurchaseDeleteModal(true);
+  };
+  
+  // Handle confirming delete for purchase
+  const handleDeletePurchaseConfirm = () => {
+    if (purchaseToDelete) {
+      try {
+        // Filter out the deleted purchase
+        const updatedPurchases = feedPurchases.filter(purchase => purchase.id !== purchaseToDelete);
+        setFeedPurchases(updatedPurchases);
+        localStorage.setItem('feedPurchases', JSON.stringify(updatedPurchases));
+        
+        // Show confirmation
+        alert("Feed purchase deleted successfully!");
+      } catch (error) {
+        console.error('Error deleting feed purchase:', error);
+        alert("Error deleting feed purchase. Please try again.");
+      }
+    }
+    
+    // Close the modal
+    setShowPurchaseDeleteModal(false);
+    setPurchaseToDelete(null);
+  };
+  
+  // Handle opening edit modal for usage
+  const handleEditUsage = (id: string) => {
+    const usage = feedUsage.find(u => u.id === id);
+    if (usage) {
+      setUsageToEdit(usage);
+      setShowUsageEditModal(true);
+    }
+  };
+  
+  // Handle saving edited usage
+  const handleSaveEditUsage = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!usageToEdit) return;
+    
+    // Update the usage in the usage array
+    const updatedUsage = feedUsage.map(usage => 
+      usage.id === usageToEdit.id ? usageToEdit : usage
+    );
+    
+    // Update state and localStorage
+    setFeedUsage(updatedUsage);
+    localStorage.setItem('feedUsage', JSON.stringify(updatedUsage));
+    
+    // Close the modal
+    setShowUsageEditModal(false);
+    setUsageToEdit(null);
+    
+    // Show confirmation
+    alert("Usage updated successfully!");
+  };
+  
+  // Handle opening delete confirmation modal for usage
+  const handleDeleteUsage = (id: string) => {
+    setUsageToDelete(id);
+    setShowUsageDeleteModal(true);
+  };
+  
+  // Handle confirming delete for usage
+  const handleDeleteUsageConfirm = () => {
+    if (usageToDelete) {
+      try {
+        // Filter out the deleted usage
+        const updatedUsage = feedUsage.filter(usage => usage.id !== usageToDelete);
+        setFeedUsage(updatedUsage);
+        localStorage.setItem('feedUsage', JSON.stringify(updatedUsage));
+        
+        // Show confirmation
+        alert("Feed usage record deleted successfully!");
+      } catch (error) {
+        console.error('Error deleting feed usage:', error);
+        alert("Error deleting feed usage record. Please try again.");
+      }
+    }
+    
+    // Close the modal
+    setShowUsageDeleteModal(false);
+    setUsageToDelete(null);
   };
   
   return (
@@ -448,12 +578,15 @@ export default function FeedPage() {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
                         Notes
                       </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-amber-100">
                     {feedPurchases.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                        <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                           No feed purchases recorded yet
                         </td>
                       </tr>
@@ -477,6 +610,20 @@ export default function FeedPage() {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {purchase.notes}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex space-x-2">
+                            <button
+                              onClick={() => handleEditPurchase(purchase.id)}
+                              className="text-amber-600 hover:text-amber-900 font-medium"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeletePurchase(purchase.id)}
+                              className="text-red-600 hover:text-red-900 font-medium ml-2"
+                            >
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -608,12 +755,15 @@ export default function FeedPage() {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
                         Notes
                       </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-amber-800 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-amber-100">
                     {feedUsage.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                        <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
                           No feed usage recorded yet
                         </td>
                       </tr>
@@ -632,6 +782,20 @@ export default function FeedPage() {
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {usage.notes}
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex space-x-2">
+                            <button
+                              onClick={() => handleEditUsage(usage.id)}
+                              className="text-amber-600 hover:text-amber-900 font-medium"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUsage(usage.id)}
+                              className="text-red-600 hover:text-red-900 font-medium ml-2"
+                            >
+                              Delete
+                            </button>
+                          </td>
                         </tr>
                       ))
                     )}
@@ -642,6 +806,299 @@ export default function FeedPage() {
           </div>
         </main>
       </div>
+      
+      {/* Purchase Edit Modal */}
+      {showPurchaseEditModal && purchaseToEdit && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+            <h3 className="text-xl font-bold text-amber-900 mb-4">Edit Feed Purchase</h3>
+            
+            <form onSubmit={handleSaveEditPurchase} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Purchase Date */}
+                <div>
+                  <label htmlFor="editDate" className="block text-sm font-medium text-amber-700 mb-1">
+                    Purchase Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    id="editDate"
+                    name="date"
+                    value={purchaseToEdit.date}
+                    onChange={(e) => setPurchaseToEdit({...purchaseToEdit, date: e.target.value})}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+                
+                {/* Feed Type */}
+                <div>
+                  <label htmlFor="editFeedType" className="block text-sm font-medium text-amber-700 mb-1">
+                    Feed Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="editFeedType"
+                    name="feedType"
+                    value={purchaseToEdit.feedType}
+                    onChange={(e) => setPurchaseToEdit({...purchaseToEdit, feedType: e.target.value as FeedType})}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  >
+                    <option value="chicken">Chicken Feed</option>
+                    <option value="duck">Duck Feed</option>
+                    <option value="quail">Quail Feed</option>
+                    <option value="goose">Goose Feed</option>
+                    <option value="turkey">Turkey Feed</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                
+                {/* Brand */}
+                <div>
+                  <label htmlFor="editBrand" className="block text-sm font-medium text-amber-700 mb-1">
+                    Brand/Type <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="editBrand"
+                    name="brand"
+                    value={purchaseToEdit.brand}
+                    onChange={(e) => setPurchaseToEdit({...purchaseToEdit, brand: e.target.value})}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="e.g. Organic Layer Pellets"
+                    required
+                  />
+                </div>
+                
+                {/* Quantity */}
+                <div>
+                  <label htmlFor="editQuantity" className="block text-sm font-medium text-amber-700 mb-1">
+                    Quantity (lbs) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="editQuantity"
+                    name="quantity"
+                    value={purchaseToEdit.quantity || ''}
+                    onChange={(e) => setPurchaseToEdit({...purchaseToEdit, quantity: parseFloat(e.target.value)})}
+                    min="0"
+                    step="0.1"
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+                
+                {/* Cost */}
+                <div>
+                  <label htmlFor="editCost" className="block text-sm font-medium text-amber-700 mb-1">
+                    Total Cost ($) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="editCost"
+                    name="cost"
+                    value={purchaseToEdit.cost || ''}
+                    onChange={(e) => setPurchaseToEdit({...purchaseToEdit, cost: parseFloat(e.target.value)})}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+                
+                {/* Notes */}
+                <div className="md:col-span-2">
+                  <label htmlFor="editNotes" className="block text-sm font-medium text-amber-700 mb-1">
+                    Notes
+                  </label>
+                  <input
+                    type="text"
+                    id="editNotes"
+                    name="notes"
+                    value={purchaseToEdit.notes}
+                    onChange={(e) => setPurchaseToEdit({...purchaseToEdit, notes: e.target.value})}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Optional notes about this purchase"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPurchaseEditModal(false);
+                    setPurchaseToEdit(null);
+                  }}
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Usage Edit Modal */}
+      {showUsageEditModal && usageToEdit && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
+            <h3 className="text-xl font-bold text-amber-900 mb-4">Edit Feed Usage</h3>
+            
+            <form onSubmit={handleSaveEditUsage} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Usage Date */}
+                <div>
+                  <label htmlFor="editUsageDate" className="block text-sm font-medium text-amber-700 mb-1">
+                    Usage Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    id="editUsageDate"
+                    name="date"
+                    value={usageToEdit.date}
+                    onChange={(e) => setUsageToEdit({...usageToEdit, date: e.target.value})}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+                
+                {/* Feed Type */}
+                <div>
+                  <label htmlFor="editUsageFeedType" className="block text-sm font-medium text-amber-700 mb-1">
+                    Feed Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="editUsageFeedType"
+                    name="feedType"
+                    value={usageToEdit.feedType}
+                    onChange={(e) => setUsageToEdit({...usageToEdit, feedType: e.target.value as FeedType})}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  >
+                    <option value="chicken">Chicken Feed</option>
+                    <option value="duck">Duck Feed</option>
+                    <option value="quail">Quail Feed</option>
+                    <option value="goose">Goose Feed</option>
+                    <option value="turkey">Turkey Feed</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                
+                {/* Quantity */}
+                <div>
+                  <label htmlFor="editUsageQuantity" className="block text-sm font-medium text-amber-700 mb-1">
+                    Quantity (lbs) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="editUsageQuantity"
+                    name="quantity"
+                    value={usageToEdit.quantity || ''}
+                    onChange={(e) => setUsageToEdit({...usageToEdit, quantity: parseFloat(e.target.value)})}
+                    min="0"
+                    step="0.1"
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+                
+                {/* Notes */}
+                <div>
+                  <label htmlFor="editUsageNotes" className="block text-sm font-medium text-amber-700 mb-1">
+                    Notes
+                  </label>
+                  <input
+                    type="text"
+                    id="editUsageNotes"
+                    name="notes"
+                    value={usageToEdit.notes}
+                    onChange={(e) => setUsageToEdit({...usageToEdit, notes: e.target.value})}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Optional notes about this usage"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUsageEditModal(false);
+                    setUsageToEdit(null);
+                  }}
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {/* Purchase Delete Confirmation Modal */}
+      {showPurchaseDeleteModal && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-amber-900 mb-4">Confirm Delete</h3>
+            <p className="text-gray-700 mb-6">Are you sure you want to delete this feed purchase? This action cannot be undone.</p>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowPurchaseDeleteModal(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeletePurchaseConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Usage Delete Confirmation Modal */}
+      {showUsageDeleteModal && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-amber-900 mb-4">Confirm Delete</h3>
+            <p className="text-gray-700 mb-6">Are you sure you want to delete this feed usage record? This action cannot be undone.</p>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowUsageDeleteModal(false)}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteUsageConfirm}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
