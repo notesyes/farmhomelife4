@@ -619,30 +619,19 @@ export default function InventoryPage() {
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-lg border border-white border-opacity-20">
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center">
-                  <button 
-                    className="flex items-center px-3 py-2 mr-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    onClick={() => window.location.href = '/dashboard'}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-1">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-                    </svg>
-                    Back
-                  </button>
-                  <h1 className="text-3xl font-bold text-amber-700 flex items-center gap-3">
-                    <span className="text-4xl">🥚</span> Egg Production Tracker
-                  </h1>
-                </div>
+              <div className="flex items-center mb-2">
                 <button 
-                  className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-                  onClick={() => window.location.href = '/dashboard/incubation'}
+                  className="flex items-center px-3 py-2 mr-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  onClick={() => window.location.href = '/dashboard'}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-1">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                   </svg>
-                  Add New Batch
+                  Back
                 </button>
+                <h1 className="text-3xl font-bold text-amber-700 flex items-center gap-3">
+                  <span className="text-4xl">🥚</span> Egg Production Tracker
+                </h1>
               </div>
               <p className="text-amber-800">Monitor your daily egg production with smart insights and analytics</p>
             </div>

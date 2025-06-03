@@ -146,17 +146,17 @@ ${format(new Date(Date.now() - 172800000), 'yyyy-MM-dd')},"Chicken","Rhode Islan
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
           <div className="max-w-7xl mx-auto">
             <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Farm Reports</h2>
+              <div className="flex items-center mb-4">
                 <button 
-                  className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-                  onClick={() => window.location.href = '/dashboard/incubation'}
+                  className="flex items-center px-3 py-2 mr-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  onClick={() => window.location.href = '/dashboard'}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-1">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                   </svg>
-                  Add New Batch
+                  Back
                 </button>
+                <h2 className="text-xl font-semibold">Farm Reports</h2>
               </div>
               <p className="text-gray-600 mb-6">
                 Generate and download reports for your farm&apos;s production, sales, inventory, and health records.
