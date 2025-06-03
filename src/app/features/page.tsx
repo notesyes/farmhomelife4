@@ -29,7 +29,7 @@ const FeaturesPage = () => {
             </nav>
             <div className="flex items-center space-x-4">
               <Link 
-                href="/login" 
+                href="/signin" 
                 className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
               >
                 Log in

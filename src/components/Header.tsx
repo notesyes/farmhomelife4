@@ -29,12 +29,12 @@ const Header: React.FC<HeaderProps> = ({ className = "" }) => {
             >
               Features
             </a>
-            <a
-              href="#testimonials"
+            <Link
+              href="/#testimonials"
               className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
             >
               Testimonials
-            </a>
+            </Link>
             <Link
               href="/pricing"
               className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium transition-colors duration-200"

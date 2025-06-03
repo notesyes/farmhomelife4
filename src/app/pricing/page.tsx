@@ -31,7 +31,7 @@ const PricingPage = () => {
             </nav>
             <div className="flex items-center space-x-4">
               <Link 
-                href="/login" 
+                href="/signin" 
                 className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
               >
                 Log in
@@ -213,7 +213,7 @@ const PricingPage = () => {
             
             <div>
               <h3 className="text-lg font-medium text-gray-900">Can I switch between monthly and annual plans?</h3>
-              <p className="mt-2 text-gray-600">Yes, you can switch between plans at any time. If you switch from monthly to annual, we'll apply a prorated discount.</p>
+              <p className="mt-2 text-gray-600">Yes, you can switch between plans at any time. If you switch from monthly to annual, we&apos;ll apply a prorated discount.</p>
             </div>
             
             <div>
@@ -233,6 +233,79 @@ const PricingPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-16 md:py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+              What Our Users Say
+            </h2>
+            <p className="text-xl text-emerald-600">
+              Hear from egg farmers who have transformed their business with our platform
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Testimonial 1 */}
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300">
+              <div className="flex items-center mb-4" role="img" aria-label="5 out of 5 stars">
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+              </div>
+              <blockquote className="text-gray-700 mb-6 italic">
+                &ldquo;This app has completely transformed how I manage my egg production. I used to track everything in spreadsheets, but now it&apos;s all in one place and so much easier to use.&rdquo;
+              </blockquote>
+              <div className="border-t border-gray-100 pt-4">
+                <div className="font-semibold text-gray-800 mb-1">Sarah Johnson</div>
+                <div className="text-sm text-gray-600">Small Farm Owner</div>
+                <div className="text-sm text-emerald-600 font-medium">200 hens</div>
+              </div>
+            </div>
+
+            {/* Testimonial 2 */}
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300">
+              <div className="flex items-center mb-4" role="img" aria-label="5 out of 5 stars">
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+              </div>
+              <blockquote className="text-gray-700 mb-6 italic">
+                &ldquo;The analytics features have helped me optimize my feed costs and increase egg production by 15%. The ROI on this subscription has been incredible.&rdquo;
+              </blockquote>
+              <div className="border-t border-gray-100 pt-4">
+                <div className="font-semibold text-gray-800 mb-1">Michael Rodriguez</div>
+                <div className="text-sm text-gray-600">Mid-size Farm Manager</div>
+                <div className="text-sm text-emerald-600 font-medium">800 hens</div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300">
+              <div className="flex items-center mb-4" role="img" aria-label="4 out of 5 stars">
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-yellow-400" aria-hidden="true">★</span>
+                <span className="text-lg text-gray-300" aria-hidden="true">★</span>
+              </div>
+              <blockquote className="text-gray-700 mb-6 italic">
+                &ldquo;The breeding calendar feature is a game-changer. I never miss important dates now, and our hatch rates have improved significantly.&rdquo;
+              </blockquote>
+              <div className="border-t border-gray-100 pt-4">
+                <div className="font-semibold text-gray-800 mb-1">Emily Chen</div>
+                <div className="text-sm text-gray-600">Heritage Breed Specialist</div>
+                <div className="text-sm text-emerald-600 font-medium">150 hens</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* CTA Section */}
       <div className="bg-emerald-700">
@@ -281,7 +354,7 @@ const PricingPage = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/testimonials" className="text-base text-gray-300 hover:text-white">
+                  <Link href="#testimonials" className="text-base text-gray-300 hover:text-white">
                     Testimonials
                   </Link>
                 </li>
@@ -302,7 +375,7 @@ const PricingPage = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/faq" className="text-base text-gray-300 hover:text-white">
+                  <Link href="#faq" className="text-base text-gray-300 hover:text-white">
                     FAQ
                   </Link>
                 </li>

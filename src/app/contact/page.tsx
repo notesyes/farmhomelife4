@@ -358,17 +358,17 @@ const ContactPage = () => {
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-lg font-medium text-gray-900">What are your support hours?</h3>
-              <p className="mt-2 text-gray-600">Our customer support team is available Monday through Friday from 8am to 5pm Eastern Time. We strive to respond to all inquiries within 24 hours.</p>
+              <p className="mt-2 text-gray-600">Our customer support team is available Monday through Friday from 8am to 5pm Eastern Time. We strive to respond to all inquiries within 48-78 hours.</p>
             </div>
             
             <div>
               <h3 className="text-lg font-medium text-gray-900">Do you offer phone support?</h3>
-              <p className="mt-2 text-gray-600">Yes, phone support is available for all paid plans. Free trial users can reach us via email or through our contact form.</p>
+              <p className="mt-2 text-gray-600">No, we only support email support at this time. Please use our contact form or send an email directly to our support team.</p>
             </div>
             
             <div>
               <h3 className="text-lg font-medium text-gray-900">How quickly will I receive a response?</h3>
-              <p className="mt-2 text-gray-600">We typically respond to all inquiries within 24 hours during business days. Priority support is available for annual plan subscribers.</p>
+              <p className="mt-2 text-gray-600">We typically respond to all inquiries within 48 to 78 hours during business days. Priority support is available for annual plan subscribers.</p>
             </div>
             
             <div>
