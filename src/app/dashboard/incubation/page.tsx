@@ -39,6 +39,7 @@ interface EggBatch {
   humidity: number;
   expectedHatchDate: string;
   daysRemaining: number;
+  daysElapsed?: number;
   lastTurned: string;
   lastCandled: string;
   alerts?: IncubationAlert[];
@@ -249,8 +250,10 @@ export default function IncubationPage() {
     ];
   });
 
-  // State for showing/hiding the add form
+  // State for showing/hiding the add form and edit form
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingBatch, setEditingBatch] = useState<EggBatch | null>(null);
   const [selectedSpecies, setSelectedSpecies] = useState<SpeciesType | ''>('');
   const [selectedBreeds, setSelectedBreeds] = useState<string[]>([]);
   const [compatibilityWarnings, setCompatibilityWarnings] = useState<CompatibilityWarning[]>([]);
@@ -386,6 +389,7 @@ export default function IncubationPage() {
   // Recalculate days remaining for each batch on page load and every day
   useEffect(() => {
     const updateDaysRemaining = () => {
+      // Use a fixed date for consistent calculations across the component
       const today = new Date();
       const currentBatches = batchesRef.current; // Use the ref to avoid dependency issues
       
@@ -405,12 +409,16 @@ export default function IncubationPage() {
         const expectedHatchDate = new Date(startDate);
         expectedHatchDate.setDate(startDate.getDate() + totalDays);
         
+        // Calculate days elapsed since start date
+        const daysElapsed = Math.max(0, Math.min(totalDays, Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))));
+        
         // Calculate days remaining based on today and expected hatch date
-        const daysRemaining = Math.max(0, Math.ceil((expectedHatchDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+        const daysRemaining = Math.max(0, totalDays - daysElapsed);
         
         return {
           ...batch,
           daysRemaining,
+          daysElapsed,
           expectedHatchDate: expectedHatchDate.toISOString()
         };
       });
@@ -421,7 +429,7 @@ export default function IncubationPage() {
       }
     };
     
-    // Update immediately and then daily
+    // Update immediately and then hourly
     updateDaysRemaining();
     const intervalId = setInterval(updateDaysRemaining, 1000 * 60 * 60); // Check every hour
     
@@ -606,18 +614,49 @@ export default function IncubationPage() {
                   ))}
                 </div>
               </div>
-            )}
-            
+            {/* Add batch form */}
             {showAddForm && (
-              <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white border-opacity-20 mb-6">
-                <h2 className="text-xl font-semibold text-amber-700 mb-4">Add New Batch</h2>
-                
-                {compatibilityWarnings.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium text-amber-700 mb-2">Compatibility Warnings</h3>
-                    <div className="space-y-3">
-                      {compatibilityWarnings.map(warning => (
-                        <div 
+              <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-2xl shadow-lg border border-white border-opacity-30 overflow-hidden mb-4 p-6">
+                <h3 className="text-lg font-semibold text-amber-700 mb-4">Add New Batch</h3>
+                <form className="space-y-4">
+                  {compatibilityWarnings.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium text-amber-700 mb-2">Compatibility Warnings</h3>
+                      <div className="space-y-3">
+                        {compatibilityWarnings.map(warning => (
+                          <div 
+                            key={warning.id}
+                            className={`p-4 rounded-lg ${
+                              warning.severity === 'error' 
+                                ? 'bg-red-50 border border-red-200' 
+                                : 'bg-amber-50 border border-amber-200'
+                            }`}
+                          >
+                            <div className="flex items-start">
+                              <div className={`p-1 rounded-full ${
+                                warning.severity === 'error' ? 'bg-red-100' : 'bg-amber-100'
+                              } mr-3`}>
+                                {warning.severity === 'error' ? (
+                                  <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                  </svg>
+                                ) : (
+                                  <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <p className={`font-medium ${
+                                  warning.severity === 'error' ? 'text-red-800' : 'text-amber-800'
+                                }`}>
+                                  {warning.breeds.join(' + ')}: {warning.reason}
+                                </p>
+                                <p className={`text-sm ${
+                                  warning.severity === 'error' ? 'text-red-600' : 'text-amber-600'
+                                }`}>
+                                  {warning.recommendation}
+                                </p>
                           key={warning.id}
                           className={`p-4 rounded-lg ${
                             warning.severity === 'error' 
@@ -934,9 +973,18 @@ export default function IncubationPage() {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          // For now, just show an alert
-                          alert(`Edit batch: ${batch.batchName}`);
-                          // In the future, this would open an edit form
+                          // Open edit form and populate with batch data
+                          setEditingBatch(batch);
+                          setShowEditForm(true);
+                          // Pre-populate form fields
+                          setBatchName(batch.batchName);
+                          setSelectedSpecies(batch.species as SpeciesType);
+                          setSelectedBreeds(batch.varieties);
+                          setEggCount(batch.eggCount.toString());
+                          setStartDate(format(new Date(batch.startDate), 'yyyy-MM-dd'));
+                          setNotes(batch.notes || '');
+                          setTemperature(batch.temperature);
+                          setHumidity(batch.humidity);
                         }}
                         className="p-2 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-full transition-colors"
                         title="Edit batch"
@@ -1038,7 +1086,25 @@ export default function IncubationPage() {
                       <div className="space-y-2 bg-gradient-to-r from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200 shadow-sm">
                         <div className="flex justify-between items-center mb-1">
                           <h4 className="font-medium text-amber-800">Incubation Timeline</h4>
-                          <div className="relative h-5 bg-white rounded-full overflow-hidden shadow-inner border border-amber-200">
+                          <div className="text-amber-700 text-sm font-medium bg-white px-2 py-1 rounded-full border border-amber-200 shadow-sm">
+                            {(() => {
+                              const speciesData = {
+                                "Chicken": { days: 21 },
+                                "Duck": { days: 28 },
+                                "Goose": { days: 30 },
+                                "Turkey": { days: 28 },
+                                "Quail": { days: 18 }
+                              };
+                              const totalDays = speciesData[batch.species]?.days || 21;
+                              // Use the pre-calculated daysElapsed from the batch object if available
+                              const daysElapsed = batch.daysElapsed !== undefined ? batch.daysElapsed : 
+                                Math.max(0, Math.min(totalDays, totalDays - batch.daysRemaining));
+                              return `Day ${daysElapsed + 1} of ${totalDays}`;
+                            })()}
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center text-xs text-amber-700 px-1">
                           {(() => {
                             // Calculate progress based on start date and species incubation period
                             const speciesData = {
@@ -1051,7 +1117,10 @@ export default function IncubationPage() {
                             
                             const totalDays = speciesData[batch.species]?.days || 21;
                             const turnUntilDay = speciesData[batch.species]?.turnUntil || 18;
-                            const currentDay = totalDays - batch.daysRemaining + 1;
+                            // Use the pre-calculated daysElapsed from the batch object if available
+                            const daysElapsed = batch.daysElapsed !== undefined ? batch.daysElapsed : 
+                              Math.max(0, Math.min(totalDays, totalDays - batch.daysRemaining));
+                            const currentDay = daysElapsed + 1;
                             const lockdownDay = turnUntilDay + 1;
                             
                             // Calculate days until each phase
@@ -1102,7 +1171,11 @@ export default function IncubationPage() {
                             
                             const totalDays = speciesData[batch.species]?.days || 21;
                             const turnUntilDay = speciesData[batch.species]?.turnUntil || 18;
-                            const daysElapsed = totalDays - batch.daysRemaining;
+                            
+                            // Use the pre-calculated daysElapsed from the batch object
+                            // This ensures consistency with the days remaining calculation
+                            const daysElapsed = batch.daysElapsed !== undefined ? batch.daysElapsed : 
+                              Math.max(0, Math.min(totalDays, totalDays - batch.daysRemaining));
                             const progress = Math.min(100, Math.max(0, (daysElapsed / totalDays) * 100));
                             
                             // Calculate milestone positions
@@ -1114,7 +1187,7 @@ export default function IncubationPage() {
                                 {/* Main progress bar with gradient based on phase */}
                                 <div 
                                   className={`absolute left-0 top-0 h-full transition-all duration-500 ease-out ${progress < turnUntilPosition ? 'bg-gradient-to-r from-amber-400 to-amber-500' : progress < lockdownPosition ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-gradient-to-r from-amber-600 to-amber-700'}`}
-                                  style={{ width: `${progress}%` }}
+                                  style={{ width: `${batch.status === 'incubating' ? progress : 0}%` }}
                                 ></div>
                                 
                                 {/* Milestone markers with tooltips */}
@@ -1149,16 +1222,37 @@ export default function IncubationPage() {
                                 </div>
                                 
                                 {/* Current day indicator with pulsing effect */}
-                                <div 
-                                  className="absolute top-0 h-full z-10" 
-                                  style={{ left: `${progress}%` }}
-                                >
-                                  <div className="absolute top-1/2 transform -translate-y-1/2 -ml-2.5">
-                                    <div className="h-5 w-5 bg-white border-2 border-amber-600 rounded-full shadow-md flex items-center justify-center animate-pulse">
-                                      <div className="h-2 w-2 bg-amber-600 rounded-full"></div>
+                                {batch.status === 'incubating' && (
+                                  <div 
+                                    className="absolute top-0 h-full z-10" 
+                                    style={{ left: `${progress}%` }}
+                                  >
+                                    <div className="absolute top-1/2 transform -translate-y-1/2 -ml-2.5">
+                                      <div className="h-5 w-5 bg-white border-2 border-amber-600 rounded-full shadow-md flex items-center justify-center animate-pulse">
+                                        <div className="h-2 w-2 bg-amber-600 rounded-full"></div>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
+                                )}
+                                
+                                {/* Status display for non-incubating batches */}
+                                {batch.status !== 'incubating' && (
+                                  <div className="absolute inset-0 flex items-center justify-center text-xs font-medium">
+                                    {batch.status === 'completed' ? (
+                                      <span className="text-green-700 bg-green-50 px-2 py-1 rounded-full border border-green-200">
+                                        Completed
+                                      </span>
+                                    ) : batch.status === 'hatched' ? (
+                                      <span className="text-amber-700 bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
+                                        Hatched
+                                      </span>
+                                    ) : (
+                                      <span className="text-red-700 bg-red-50 px-2 py-1 rounded-full border border-red-200">
+                                        Failed
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                               </>
                             );
                           })()}
@@ -1166,6 +1260,10 @@ export default function IncubationPage() {
                         
                         {/* Handling instructions based on current phase */}
                         {(() => {
+                          if (batch.status !== 'incubating') {
+                            return null; // Don't show instructions for non-incubating batches
+                          }
+                          
                           const speciesData = {
                             "Chicken": { days: 21, turnUntil: 18 },
                             "Duck": { days: 28, turnUntil: 25 },
@@ -1176,7 +1274,10 @@ export default function IncubationPage() {
                           
                           const totalDays = speciesData[batch.species]?.days || 21;
                           const turnUntilDay = speciesData[batch.species]?.turnUntil || 18;
-                          const daysElapsed = totalDays - batch.daysRemaining;
+                          
+                          // Use the pre-calculated daysElapsed from the batch object if available
+                          const daysElapsed = batch.daysElapsed !== undefined ? batch.daysElapsed : 
+                            Math.max(0, Math.min(totalDays, totalDays - batch.daysRemaining));
                           
                           let instructions = "";
                           let bgColor = "bg-amber-50";
