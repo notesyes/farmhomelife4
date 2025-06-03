@@ -72,6 +72,10 @@ export default function CustomersPage() {
     name: ""
   });
 
+  // State for editing customer
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+
   // State for the new sale form
   const [isAddingSale, setIsAddingSale] = useState(false);
   const [newSale, setNewSale] = useState({
@@ -103,6 +107,31 @@ export default function CustomersPage() {
     
     setNewCustomer({ name: "" });
     setIsAddingCustomer(false);
+  };
+
+  // Function to start editing a customer
+  const handleStartEditCustomer = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setIsEditingCustomer(true);
+  };
+
+  // Function to handle editing a customer
+  const handleEditCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingCustomer) return;
+    
+    if (editingCustomer.name.trim() === "") {
+      alert("Please enter a customer name");
+      return;
+    }
+    
+    setCustomers(customers.map(customer => 
+      customer.id === editingCustomer.id ? editingCustomer : customer
+    ));
+    
+    setEditingCustomer(null);
+    setIsEditingCustomer(false);
   };
 
   // Function to handle adding a new sale
@@ -253,6 +282,45 @@ export default function CustomersPage() {
                 </div>
               )}
 
+              {/* Edit Customer Form */}
+              {isEditingCustomer && editingCustomer && (
+                <div className="p-4 bg-amber-50 border-b border-amber-100">
+                  <form onSubmit={handleEditCustomer} className="flex items-end space-x-4">
+                    <div className="flex-1">
+                      <label htmlFor="editCustomerName" className="block text-sm font-medium text-amber-700 mb-1">
+                        Edit Customer Name
+                      </label>
+                      <input
+                        type="text"
+                        id="editCustomerName"
+                        value={editingCustomer.name}
+                        onChange={(e) => setEditingCustomer({ ...editingCustomer, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="Enter customer name"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
+                      >
+                        Update
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingCustomer(null);
+                          setIsEditingCustomer(false);
+                        }}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
               {/* Add Sale Form */}
               {isAddingSale && (
                 <div className="p-4 bg-amber-50 border-b border-amber-100">
@@ -357,7 +425,10 @@ export default function CustomersPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <div className="flex space-x-2">
-                            <button className="px-3 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors">
+                            <button 
+                              onClick={() => handleStartEditCustomer(customer)}
+                              className="px-3 py-1 bg-amber-100 text-amber-800 rounded hover:bg-amber-200 transition-colors"
+                            >
                               <span className="flex items-center">
                                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -365,14 +436,9 @@ export default function CustomersPage() {
                                 Edit
                               </span>
                             </button>
-                            <button 
+                            <Link
+                              href={`/dashboard/sales?customerId=${customer.id}`}
                               className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors"
-                              onClick={() => {
-                                // Filter sales for this customer
-                                const customerSales = recentSales.filter(sale => sale.customerId === customer.id);
-                                // Here you would normally navigate to a detailed view
-                                alert(`${customerSales.length} sales found for ${customer.name}`);
-                              }}
                             >
                               <span className="flex items-center">
                                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -381,7 +447,7 @@ export default function CustomersPage() {
                                 </svg>
                                 View Sales
                               </span>
-                            </button>
+                            </Link>
                           </div>
                         </td>
                       </tr>

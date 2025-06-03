@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
@@ -33,11 +34,14 @@ type Sale = {
 };
 
 export default function SalesPage() {
+  const searchParams = useSearchParams();
+  const customerIdFilter = searchParams.get('customerId');
+
   // Mock data for customers
-  const [customers, setCustomers] = useState<Customer[]>([
+  const [customers] = useState<Customer[]>([
     { id: "1", name: "juan" },
-    { id: "2", name: "Juan Sanchez's" },
-    { id: "3", name: "machelle" },
+    { id: "2", name: "jane" },
+    { id: "3", name: "bob" },
     { id: "4", name: "michael" },
     { id: "5", name: "natasha" },
     { id: "6", name: "Peter" },
@@ -96,16 +100,22 @@ export default function SalesPage() {
 
   // Create a memoized filtered sales array to prevent infinite re-renders
   const filteredSales = useMemo(() => {
+    // First filter by customer ID if present
+    const filtered = customerIdFilter
+      ? sales.filter(sale => sale.customerId === customerIdFilter)
+      : sales;
+    
+    // Then filter by current month if needed
     return showCurrentMonthOnly 
-      ? sales.filter(sale => {
+      ? filtered.filter(sale => {
           const saleMonth = new Date(sale.date).getMonth();
           const saleYear = new Date(sale.date).getFullYear();
           const currentMonth = new Date().getMonth();
           const currentYear = new Date().getFullYear();
           return saleMonth === currentMonth && saleYear === currentYear;
         })
-      : sales;
-  }, [sales, showCurrentMonthOnly]);
+      : filtered;
+  }, [sales, showCurrentMonthOnly, customerIdFilter]);
 
   // Update sales summary when filtered sales change
   useEffect(() => {
@@ -216,6 +226,19 @@ export default function SalesPage() {
       const newId = (eggProductions.length + 1).toString();
       setEggProductions([...eggProductions, { id: newId, name }]);
     }
+  };
+
+  // Get customer name for filter display
+  const getFilteredCustomerName = () => {
+    if (!customerIdFilter) return null;
+    const customer = customers.find(c => c.id === customerIdFilter);
+    return customer ? customer.name : 'Unknown Customer';
+  };
+
+  // Clear customer filter
+  const clearCustomerFilter = () => {
+    // Use window.location to navigate without the customerId parameter
+    window.location.href = '/dashboard/sales';
   };
 
   return (
@@ -565,6 +588,25 @@ export default function SalesPage() {
                 </div>
               </div>
             </div>
+
+            {/* Customer Filter Indicator */}
+            {customerIdFilter && (
+              <div className="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200 flex justify-between items-center">
+                <div>
+                  <span className="font-medium text-blue-800">Filtered by customer: </span>
+                  <span className="text-blue-700">{getFilteredCustomerName()}</span>
+                </div>
+                <button 
+                  onClick={clearCustomerFilter}
+                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded hover:bg-blue-200 transition-colors flex items-center"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Clear Filter
+                </button>
+              </div>
+            )}
           </div>
         </main>
       </div>
