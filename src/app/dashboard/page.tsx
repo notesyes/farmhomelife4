@@ -463,7 +463,7 @@ export default function DashboardPage() {
                 value={dashboardStats.totalFeedPurchased}
                 label="Total Feed Purchased"
                 unit="lbs"
-                color="blue"
+                color="weights"
                 description="All-time feed purchases"
                 onClick={() => router.push('/dashboard/feed')}
               />
@@ -471,7 +471,7 @@ export default function DashboardPage() {
                 value={feedRemaining}
                 label="Feed Remaining"
                 unit="lbs"
-                color="green"
+                color="weights"
                 description="Current feed inventory"
                 onClick={() => router.push('/dashboard/feed')}
               />
@@ -480,7 +480,7 @@ export default function DashboardPage() {
                 label="Feed Used"
                 unit="lbs"
                 trend={dashboardStats.feedTrend}
-                color="orange"
+                color="weights"
                 description="All-time feed consumption"
                 onClick={() => router.push('/dashboard/feed')}
               />

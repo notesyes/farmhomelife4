@@ -115,14 +115,12 @@ const PricingPage = () => {
             </ul>
             
             <div className="mt-8">
-              <a 
-                href="https://buy.stripe.com/aFaeVd84meMD1pD6tVbo400" 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <Link 
+                href="/signup" 
                 className="block w-full bg-emerald-600 text-white text-center px-4 py-3 rounded-md font-medium hover:bg-emerald-700 transition-colors duration-200"
               >
                 Get started
-              </a>
+              </Link>
             </div>
           </div>
           
@@ -180,14 +178,12 @@ const PricingPage = () => {
             </ul>
             
             <div className="mt-8">
-              <a 
-                href="https://buy.stripe.com/4gM5kD1FY8of3xLg4vbo401" 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <Link 
+                href="/signup" 
                 className="block w-full bg-emerald-600 text-white text-center px-4 py-3 rounded-md font-medium hover:bg-emerald-700 transition-colors duration-200"
               >
                 Get started
-              </a>
+              </Link>
             </div>
           </div>
         </div>

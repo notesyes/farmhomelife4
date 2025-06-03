@@ -37,6 +37,12 @@ const QuickActionsCard: React.FC = () => {
       color: "bg-indigo-500 hover:bg-indigo-600"
     },
     {
+      id: "customer-reports",
+      label: "Customer Reports",
+      icon: "📝",
+      color: "bg-teal-500 hover:bg-teal-600"
+    },
+    {
       id: "generate-report",
       label: "Generate Report",
       icon: "📊",
@@ -72,6 +78,9 @@ const QuickActionsCard: React.FC = () => {
                   break;
                 case "customers":
                   router.push("/dashboard/customers");
+                  break;
+                case "customer-reports":
+                  router.push("/dashboard/customer-reports");
                   break;
                 default:
                   // Handle other actions (to be implemented)

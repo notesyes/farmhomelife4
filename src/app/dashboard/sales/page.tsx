@@ -628,7 +628,18 @@ export default function SalesPage() {
           <div className="max-w-7xl mx-auto">
             <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
               <div className="p-4 border-b border-gray-200 bg-amber-50">
-                <h2 className="text-lg font-medium text-amber-900">Sales Summary</h2>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-lg font-medium text-amber-900">Sales Summary</h2>
+                  <button 
+                    className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                    onClick={() => window.location.href = '/dashboard/incubation'}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mr-2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add New Batch
+                  </button>
+                </div>
               </div>
               
               <div className="p-4">

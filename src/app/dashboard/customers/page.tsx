@@ -230,6 +230,116 @@ export default function CustomersPage() {
     setIsAddingSale(false);
   };
 
+  // Function to generate and download an invoice PDF for a specific customer
+  const handleDownloadInvoice = (customer: Customer) => {
+    // Check if jsPDF is available
+    if (typeof window !== 'undefined' && window.jspdf) {
+      try {
+        // Get customer's sales
+        const customerSales = recentSales.filter(sale => sale.customerId === customer.id);
+        
+        // Create a new jsPDF instance
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Add invoice header
+        doc.setFontSize(20);
+        doc.text('INVOICE', 105, 20, { align: 'center' });
+        
+        // Add Farm Home Life info
+        doc.setFontSize(12);
+        doc.text('Farm Home Life', 14, 30);
+        doc.setFontSize(10);
+        doc.text('123 Farm Road', 14, 35);
+        doc.text('Countryside, CA 94123', 14, 40);
+        doc.text('support@farmhomelife.com', 14, 45);
+        doc.text('(555) 123-4567', 14, 50);
+        
+        // Add invoice details
+        doc.setFontSize(10);
+        doc.text(`Invoice Date: ${new Date().toLocaleDateString()}`, 140, 30);
+        doc.text(`Invoice #: INV-${customer.id}-${Date.now().toString().substr(-6)}`, 140, 35);
+        doc.text(`Due Date: ${new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString()}`, 140, 40);
+        
+        // Add customer details
+        doc.setFontSize(12);
+        doc.text('Bill To:', 14, 60);
+        doc.setFontSize(10);
+        doc.text(customer.name, 14, 65);
+        if (customer.email) doc.text(customer.email, 14, 70);
+        if (customer.phone) doc.text(customer.phone, 14, 75);
+        
+        // Add table headers
+        const startY = 85;
+        doc.setFillColor(240, 240, 240);
+        doc.rect(14, startY, 182, 10, 'F');
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Date', 16, startY + 7);
+        doc.text('Description', 50, startY + 7);
+        doc.text('Quantity', 110, startY + 7);
+        doc.text('Unit Price', 140, startY + 7);
+        doc.text('Amount', 175, startY + 7);
+        
+        // Add sale items
+        let yPos = startY + 15;
+        let total = 0;
+        
+        if (customerSales.length === 0) {
+          doc.text('No sales records found', 14, yPos);
+          yPos += 10;
+        } else {
+          customerSales.forEach((sale, index) => {
+            doc.text(sale.date, 16, yPos);
+            doc.text(`Farm Fresh Eggs (${sale.dozens.toFixed(1)} dozen)`, 50, yPos);
+            doc.text(sale.dozens.toFixed(2), 110, yPos);
+            doc.text(`$${sale.pricePerDozen.toFixed(2)}`, 140, yPos);
+            doc.text(`$${sale.total.toFixed(2)}`, 175, yPos);
+            
+            total += sale.total;
+            yPos += 10;
+            
+            // Add a light line between rows
+            if (index < customerSales.length - 1) {
+              doc.setDrawColor(200, 200, 200);
+              doc.line(14, yPos - 5, 196, yPos - 5);
+            }
+          });
+        }
+        
+        // Add total
+        yPos += 10;
+        doc.setDrawColor(0, 0, 0);
+        doc.line(140, yPos - 5, 196, yPos - 5);
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('Total:', 140, yPos + 5);
+        doc.text(`$${total.toFixed(2)}`, 175, yPos + 5);
+        
+        // Add payment terms
+        yPos += 20;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text('Payment Terms: Net 30', 14, yPos);
+        yPos += 10;
+        doc.text('Please make checks payable to Farm Home Life', 14, yPos);
+        
+        // Add footer
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Thank you for your business!', 105, 280, { align: 'center' });
+        
+        // Save the PDF
+        doc.save(`invoice-${customer.name.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+      } catch (error) {
+        console.error('Error generating invoice PDF:', error);
+        alert('There was an error generating the invoice. Please try again.');
+      }
+    } else {
+      alert('PDF generation library is loading. Please try again in a moment.');
+    }
+  };
+
   // Function to handle downloading customer data as PDF
   const handleDownloadPDF = () => {
     // Check if jsPDF is available
@@ -628,6 +738,17 @@ export default function CustomersPage() {
                                 View Sales
                               </span>
                             </Link>
+                            <button
+                              onClick={() => handleDownloadInvoice(customer)}
+                              className="px-3 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition-colors"
+                            >
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Invoice
+                              </span>
+                            </button>
                           </div>
                         </td>
                       </tr>

@@ -389,21 +389,21 @@ export default function FeedPage() {
                 value={feedStats.totalPurchased}
                 label="Total Feed Purchased"
                 unit="lbs"
-                color="blue"
+                color="weights"
                 description="All-time feed purchases"
               />
               <DashboardStatCard 
                 value={remainingFeed}
                 label="Feed Remaining"
                 unit="lbs"
-                color="green"
+                color="weights"
                 description="Current feed inventory"
               />
               <DashboardStatCard 
                 value={feedStats.totalUsed}
                 label="Feed Used"
                 unit="lbs"
-                color="orange"
+                color="weights"
                 description="All-time feed consumption"
               />
               <DashboardStatCard 

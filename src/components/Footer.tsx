@@ -44,8 +44,8 @@ const Footer: React.FC<FooterProps> = ({ className = "" }) => {
             <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase">Support</h3>
             <ul className="mt-4 space-y-4">
               <li>
-                <Link href="/help" className="text-base text-gray-300 hover:text-white">
-                  Help Center
+                <Link href="/about" className="text-base text-gray-300 hover:text-white">
+                  About Us
                 </Link>
               </li>
               <li>

@@ -3,7 +3,7 @@ interface DashboardStatCardProps {
   label: string;
   unit?: string;
   trend?: string;
-  color?: "blue" | "green" | "purple" | "orange" | "red" | "egg" | "broken-egg";
+  color?: "blue" | "green" | "purple" | "orange" | "red" | "egg" | "broken-egg" | "weights";
   description?: string;
   className?: string;
   onClick?: () => void;
@@ -30,6 +30,7 @@ const DashboardStatCard: React.FC<DashboardStatCardProps> = ({
     red: "bg-red-100 text-red-600",
     egg: "bg-amber-100 text-amber-600",
     "broken-egg": "bg-red-100 text-red-600",
+    weights: "bg-slate-100 text-slate-600",
   };
 
   // Trend color
@@ -109,6 +110,11 @@ const DashboardStatCard: React.FC<DashboardStatCardProps> = ({
             <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 3C8.5 3 5 7.58 5 11.5c0 3.91 3.1 7.5 7 7.5s7-3.59 7-7.5C19 7.58 15.5 3 12 3zm-1 11.5c-1.41 0-2-1.02-2-2.25 0-.53.14-1.01.36-1.37.15-.24.42-.4.74-.4.32 0 .59.16.74.4.22.36.36.84.36 1.37 0 1.23-.59 2.25-2 2.25z" />
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </svg>
+          )}
+          {color === "weights" && (
+            <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14 4.14 5.57 2 7.71 3.43 9.14 2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22 14.86 20.57 16.29 22 17.71 20.57 16.29 19.14z" />
             </svg>
           )}
         </div>
