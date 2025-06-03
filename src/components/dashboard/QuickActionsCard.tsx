@@ -7,9 +7,9 @@ const QuickActionsCard: React.FC = () => {
   // Mock data for quick actions
   const quickActions: QuickAction[] = [
     {
-      id: "record-production",
-      label: "Record Production",
-      icon: "📝",
+      id: "inventory",
+      label: "Inventory",
+      icon: "📦",
       color: "bg-blue-500 hover:bg-blue-600"
     },
     {
@@ -23,12 +23,6 @@ const QuickActionsCard: React.FC = () => {
       label: "Feed Stock",
       icon: "🌾",
       color: "bg-yellow-500 hover:bg-yellow-600"
-    },
-    {
-      id: "health-check",
-      label: "Health Check",
-      icon: "🩺",
-      color: "bg-red-500 hover:bg-red-600"
     },
     {
       id: "generate-report",
@@ -49,6 +43,12 @@ const QuickActionsCard: React.FC = () => {
             onClick={() => {
               if (action.id === "generate-report") {
                 router.push("/dashboard/reports");
+              } else if (action.id === "inventory") {
+                router.push("/dashboard/inventory");
+              } else if (action.id === "feed-stock") {
+                router.push("/dashboard/feed");
+              } else if (action.id === "new-sale") {
+                router.push("/dashboard/sales");
               } else {
                 // Handle other actions (to be implemented)
                 alert(`${action.label} feature will be implemented soon!`);

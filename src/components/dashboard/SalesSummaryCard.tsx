@@ -106,11 +106,7 @@ const SalesSummaryCard: React.FC = () => {
           </div>
         </div>
         
-        <div className="pt-4 border-t border-gray-200">
-          <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-            Manage Customers
-          </button>
-        </div>
+
       </div>
     </div>
   );
