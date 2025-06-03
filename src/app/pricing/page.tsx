@@ -1,10 +1,54 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { CheckIcon } from "@heroicons/react/24/outline";
 
 const PricingPage = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // REMINDER: Replace these with your actual Stripe Price IDs from your Stripe Dashboard!
+  const MONTHLY_PRICE_ID = 'YOUR_MONTHLY_STRIPE_PRICE_ID'; // e.g., price_1PxxxxxxxxxxxxxxxxxMONTHLY
+  const ANNUAL_PRICE_ID = 'YOUR_ANNUAL_STRIPE_PRICE_ID';   // e.g., price_1PxxxxxxxxxxxxxxxxxANNUAL
+
+  const handleCheckout = async (priceId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // If the user were logged in, you could pass customerEmail here.
+        // For a public pricing page, Stripe Checkout will collect the email if needed.
+        body: JSON.stringify({ priceId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session. Please try again.');
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('Could not retrieve checkout session URL.');
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred.');
+      }
+      console.error('Stripe Checkout Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   return (
     <div className="bg-white">
@@ -115,12 +159,13 @@ const PricingPage = () => {
             </ul>
             
             <div className="mt-8">
-              <Link 
-                href="/signup" 
-                className="block w-full bg-emerald-600 text-white text-center px-4 py-3 rounded-md font-medium hover:bg-emerald-700 transition-colors duration-200"
+              <button 
+                onClick={() => handleCheckout(MONTHLY_PRICE_ID)}
+                disabled={isLoading}
+                className="block w-full bg-emerald-600 text-white text-center px-4 py-3 rounded-md font-medium hover:bg-emerald-700 transition-colors duration-200 disabled:opacity-75 disabled:cursor-not-allowed"
               >
-                Get started
-              </Link>
+                {isLoading ? 'Processing...' : 'Get started'}
+              </button>
             </div>
           </div>
           
@@ -178,12 +223,13 @@ const PricingPage = () => {
             </ul>
             
             <div className="mt-8">
-              <Link 
-                href="/signup" 
-                className="block w-full bg-emerald-600 text-white text-center px-4 py-3 rounded-md font-medium hover:bg-emerald-700 transition-colors duration-200"
+              <button 
+                onClick={() => handleCheckout(ANNUAL_PRICE_ID)}
+                disabled={isLoading}
+                className="block w-full bg-emerald-600 text-white text-center px-4 py-3 rounded-md font-medium hover:bg-emerald-700 transition-colors duration-200 disabled:opacity-75 disabled:cursor-not-allowed"
               >
-                Get started
-              </Link>
+                {isLoading ? 'Processing...' : 'Get started'}
+              </button>
             </div>
           </div>
         </div>
@@ -196,6 +242,13 @@ const PricingPage = () => {
             Frequently asked questions
           </h2>
           
+        {error && (
+          <div className="mb-8 p-4 bg-red-100 text-red-700 rounded-md text-center">
+            <p className="font-semibold">Oops! Something went wrong:</p>
+            <p>{error}</p>
+            <p className="mt-2 text-sm">Please check your connection and try again. If the problem persists, contact support.</p>
+          </div>
+        )}
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-lg font-medium text-gray-900">Can I cancel my subscription anytime?</h3>

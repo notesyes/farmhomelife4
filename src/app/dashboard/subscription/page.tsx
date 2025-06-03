@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import { useSearchParams } from 'next/navigation';
 
 export default function SubscriptionPage() {
   // Define subscription type
@@ -25,28 +26,53 @@ export default function SubscriptionPage() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+  const [isProcessingUpgrade, setIsProcessingUpgrade] = useState(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Simulate loading subscription data from Stripe
-    // In a real implementation, you would fetch this from your backend API
-    // that connects to Stripe's API
-    setTimeout(() => {
-      setSubscription({
-        plan: "Monthly",
-        status: "active",
-        price: "$6.99",
-        billingPeriod: "monthly",
-        nextBillingDate: "July 3, 2025",
-        paymentMethod: {
-          brand: "visa",
-          last4: "4242",
-          expMonth: 12,
-          expYear: 2026
+    const fetchSubscriptionStatus = async () => {
+      setIsLoading(true);
+      setCheckoutMessage(null); // Clear previous messages
+      const sessionIdFromQuery = searchParams.get('session_id');
+      
+      let apiUrl = '/api/user/get-subscription-status';
+      if (sessionIdFromQuery) {
+        apiUrl += `?session_id=${sessionIdFromQuery}`;
+      }
+
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || data.error || 'Failed to fetch subscription status.');
         }
-      });
-      setIsLoading(false);
-    }, 1000);
-  }, []);
+
+        setSubscription(data.subscription);
+        if (data.message) {
+          setCheckoutMessage(data.message);
+        }
+        
+        // Optional: If a session_id was processed and you want to clean the URL,
+        // you would use router.replace(pathname, { scroll: false }) here.
+        // This requires importing and using useRouter from 'next/navigation'.
+
+      } catch (error: unknown) {
+        let errorMessage = 'Could not load your subscription details. Please try again later.';
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        setCheckoutMessage(errorMessage);
+        setSubscription(null); // Clear subscription data on error
+        console.error("Failed to fetch subscription status:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSubscriptionStatus();
+  }, [searchParams]); // Re-fetch if searchParams change
 
   const handleCancelSubscription = () => {
     // In a real implementation, this would call your backend API
@@ -94,9 +120,46 @@ export default function SubscriptionPage() {
     }, 1000);
   };
 
-  const handleUpgradeSubscription = () => {
-    // Redirect to the annual plan checkout
-    window.open("https://buy.stripe.com/4gM5kD1FY8of3xLg4vbo401", "_blank");
+  const handleUpgradeSubscription = async (priceId: string) => {
+    if (!priceId || priceId.includes("_xxxx")) { // Basic check for placeholder
+      setCheckoutMessage("Annual plan Price ID is not configured. Please contact support or check configuration.");
+      console.error("Annual plan Price ID is a placeholder or missing:", priceId);
+      return;
+    }
+    setIsProcessingUpgrade(true);
+    setCheckoutMessage(null); // Clear previous messages
+
+    try {
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ priceId }), // Assuming your API takes priceId. Add email if available and needed.
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to create checkout session.');
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Checkout session URL not found in API response:', data);
+        throw new Error('Checkout session URL not found. Please try again.');
+      }
+    } catch (error: unknown) {
+      let errorMessage = 'Could not initiate plan upgrade. Please try again later.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      setCheckoutMessage(errorMessage);
+      console.error("Failed to upgrade subscription:", error);
+    } finally {
+      setIsProcessingUpgrade(false);
+    }
   };
 
   return (
@@ -116,6 +179,11 @@ export default function SubscriptionPage() {
         </div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 mt-8">
+          {checkoutMessage && (
+            <div className={`mb-6 p-4 rounded-lg text-base ${checkoutMessage.toLowerCase().includes('success') || checkoutMessage.toLowerCase().includes('activated') ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-red-100 text-red-800 border border-red-300'}`} role="alert">
+              {checkoutMessage}
+            </div>
+          )}
           {isLoading ? (
             <div className="bg-white shadow rounded-lg p-8 text-center">
               <svg className="animate-spin h-8 w-8 mx-auto text-emerald-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -341,14 +409,13 @@ export default function SubscriptionPage() {
                     </ul>
                     
                     {subscription?.plan !== "Annual" || subscription?.status !== "active" ? (
-                      <a 
-                        href="https://buy.stripe.com/4gM5kD1FY8of3xLg4vbo401" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="mt-6 block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                      <button
+                        onClick={() => handleUpgradeSubscription("price_xxxxxxxxxxxxxx_annual")} // IMPORTANT: Replace with your actual Annual Plan Price ID from Stripe
+                        disabled={isProcessingUpgrade || isLoading}
+                        className="mt-6 block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        Subscribe Annually
-                      </a>
+                        {isProcessingUpgrade ? "Processing..." : "Subscribe Annually"}
+                      </button>
                     ) : (
                       <div className="mt-6 text-center px-4 py-2 border border-emerald-500 text-sm font-medium rounded-md text-emerald-700 bg-emerald-50">
                         Your Current Plan
