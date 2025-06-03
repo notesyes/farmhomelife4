@@ -960,6 +960,279 @@ export default function IncubationPage() {
               </div>
             )}
             
+            {/* Edit batch form */}
+            {showEditForm && editingBatch && (
+              <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-2xl shadow-lg border border-white border-opacity-30 overflow-hidden mb-4 p-6">
+                <h3 className="text-lg font-semibold text-amber-700 mb-4">Edit Batch: {editingBatch.batchName}</h3>
+                <form className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-amber-700 mb-1">Batch Name</label>
+                      <input
+                        type="text"
+                        value={batchName}
+                        onChange={(e) => setBatchName(e.target.value)}
+                        className="w-full p-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-amber-700 mb-1">Start Date</label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full p-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-amber-700 mb-1">Species</label>
+                      <select
+                        value={selectedSpecies}
+                        onChange={(e) => {
+                          const newSpecies = e.target.value as SpeciesType;
+                          setSelectedSpecies(newSpecies);
+                          // Reset breeds when species changes
+                          setSelectedBreeds([]);
+                          // Set default temperature and humidity
+                          if (newSpecies && speciesData[newSpecies]) {
+                            setTemperature(speciesData[newSpecies].temp);
+                            setHumidity(speciesData[newSpecies].humidity);
+                          }
+                        }}
+                        className="w-full p-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      >
+                        <option value="">Select Species</option>
+                        {Object.keys(speciesData).map(species => (
+                          <option key={species} value={species}>{species}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-amber-700 mb-1">Egg Count</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={eggCount}
+                        onChange={(e) => setEggCount(e.target.value)}
+                        className="w-full p-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  
+                  {selectedSpecies && (
+                    <div>
+                      <label className="block text-sm font-medium text-amber-700 mb-1">Breeds/Varieties</label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {speciesData[selectedSpecies]?.varieties.map(breed => (
+                          <div key={breed} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id={`breed-${breed}`}
+                              checked={selectedBreeds.includes(breed)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  // Add breed
+                                  const newBreeds = [...selectedBreeds, breed];
+                                  setSelectedBreeds(newBreeds);
+                                  // Only check compatibility if we have multiple breeds
+                                  if (newBreeds.length > 1) {
+                                    // Check for incompatible breed combinations
+                                    const warnings: CompatibilityWarning[] = [];
+                                    
+                                    for (let i = 0; i < newBreeds.length; i++) {
+                                      for (let j = i + 1; j < newBreeds.length; j++) {
+                                        const breedPair = `${newBreeds[i]}-${newBreeds[j]}`;
+                                        const reversePair = `${newBreeds[j]}-${newBreeds[i]}`;
+                                        
+                                        if (incompatibleBreeds[breedPair] || incompatibleBreeds[reversePair]) {
+                                          const rule = incompatibleBreeds[breedPair] || incompatibleBreeds[reversePair];
+                                          warnings.push({
+                                            id: `warning-${Date.now()}-${i}-${j}`,
+                                            breeds: [newBreeds[i], newBreeds[j]],
+                                            reason: rule.reason,
+                                            severity: rule.severity as 'warning' | 'error',
+                                            recommendation: rule.recommendation,
+                                            detailedExplanation: rule.detailedExplanation,
+                                            showDetails: false
+                                          });
+                                        }
+                                      }
+                                    }
+                                    
+                                    setCompatibilityWarnings(warnings);
+                                  }
+                                } else {
+                                  // Remove breed
+                                  const newBreeds = selectedBreeds.filter(b => b !== breed);
+                                  setSelectedBreeds(newBreeds);
+                                  
+                                  // Recalculate compatibility warnings
+                                  if (newBreeds.length > 1) {
+                                    // Check for incompatible breed combinations
+                                    const warnings: CompatibilityWarning[] = [];
+                                    
+                                    for (let i = 0; i < newBreeds.length; i++) {
+                                      for (let j = i + 1; j < newBreeds.length; j++) {
+                                        const breedPair = `${newBreeds[i]}-${newBreeds[j]}`;
+                                        const reversePair = `${newBreeds[j]}-${newBreeds[i]}`;
+                                        
+                                        if (incompatibleBreeds[breedPair] || incompatibleBreeds[reversePair]) {
+                                          const rule = incompatibleBreeds[breedPair] || incompatibleBreeds[reversePair];
+                                          warnings.push({
+                                            id: `warning-${Date.now()}-${i}-${j}`,
+                                            breeds: [newBreeds[i], newBreeds[j]],
+                                            reason: rule.reason,
+                                            severity: rule.severity as 'warning' | 'error',
+                                            recommendation: rule.recommendation,
+                                            detailedExplanation: rule.detailedExplanation,
+                                            showDetails: false
+                                          });
+                                        }
+                                      }
+                                    }
+                                    
+                                    setCompatibilityWarnings(warnings);
+                                  } else {
+                                    setCompatibilityWarnings([]);
+                                  }
+                                }
+                              }}
+                              className="h-4 w-4 text-amber-600 focus:ring-amber-500 border-amber-300 rounded"
+                            />
+                            <label htmlFor={`breed-${breed}`} className="ml-2 text-sm text-amber-700">
+                              {breed}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-amber-700 mb-1">Temperature (°F)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={temperature}
+                        onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                        className="w-full p-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-amber-700 mb-1">Humidity (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={humidity}
+                        onChange={(e) => setHumidity(parseFloat(e.target.value))}
+                        className="w-full p-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-amber-700 mb-1">Notes</label>
+                    <textarea
+                      rows={3}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="w-full p-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                    ></textarea>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-3 pt-2">
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setShowEditForm(false);
+                        setEditingBatch(null);
+                        // Reset form
+                        setBatchName('');
+                        setSelectedSpecies('');
+                        setSelectedBreeds([]);
+                        setEggCount('');
+                        setStartDate(format(new Date(), 'yyyy-MM-dd'));
+                        setNotes('');
+                        setTemperature(99.5);
+                        setHumidity(55);
+                      }}
+                      className="px-4 py-2 border border-amber-300 rounded-lg text-amber-700 hover:bg-amber-50 transition duration-300"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="button"
+                      className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-500 text-white rounded-lg shadow-md hover:translate-y-[-2px] hover:shadow-lg transition duration-300"
+                      onClick={() => {
+                        // Validate form
+                        if (!batchName.trim()) {
+                          alert('Please enter a batch name');
+                          return;
+                        }
+                        if (!selectedSpecies) {
+                          alert('Please select a species');
+                          return;
+                        }
+                        if (!eggCount || parseInt(eggCount) <= 0) {
+                          alert('Please enter a valid egg count');
+                          return;
+                        }
+                        
+                        // Calculate expected hatch date based on species
+                        const incubationDays = selectedSpecies ? speciesData[selectedSpecies].incubationDays : 21;
+                        const startDateObj = new Date(startDate);
+                        const expectedHatchDate = new Date(startDateObj);
+                        expectedHatchDate.setDate(startDateObj.getDate() + incubationDays);
+                        
+                        // Create updated batch
+                        const updatedBatch: EggBatch = {
+                          ...editingBatch,
+                          batchName: batchName,
+                          startDate: startDateObj.toISOString(),
+                          species: selectedSpecies,
+                          varieties: selectedBreeds,
+                          eggCount: parseInt(eggCount),
+                          notes: notes,
+                          temperature: temperature,
+                          humidity: humidity,
+                          expectedHatchDate: expectedHatchDate.toISOString(),
+                          daysRemaining: incubationDays,
+                        };
+                        
+                        // Update batches
+                        const updatedBatches = batches.map(b => 
+                          b.id === editingBatch.id ? updatedBatch : b
+                        );
+                        setBatches(updatedBatches);
+                        
+                        // Update localStorage
+                        localStorage.setItem('incubationBatches', JSON.stringify(updatedBatches));
+                        
+                        // Reset form and close
+                        setShowEditForm(false);
+                        setEditingBatch(null);
+                        setBatchName('');
+                        setSelectedSpecies('');
+                        setSelectedBreeds([]);
+                        setEggCount('');
+                        setStartDate(format(new Date(), 'yyyy-MM-dd'));
+                        setNotes('');
+                        setTemperature(99.5);
+                        setHumidity(55);
+                      }}
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+            
             {batches.map(batch => (
               <div key={batch.id} className="bg-white bg-opacity-90 backdrop-blur-sm rounded-2xl shadow-lg border border-white border-opacity-30 overflow-hidden mb-4">
                 <div className="p-6">
