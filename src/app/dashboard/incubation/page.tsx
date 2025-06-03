@@ -620,12 +620,183 @@ export default function IncubationPage() {
                   </div>
                   
                   {batch.status === 'incubating' && (
-                    <div className="mt-4 bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-center">
-                      <ClockIcon className="h-5 w-5 text-amber-600 mr-2" />
-                      <div>
-                        <p className="text-amber-700 font-medium">
-                          {batch.daysRemaining} days remaining
-                        </p>
+                    <div className="mt-4 space-y-3">
+                      <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-center">
+                        <ClockIcon className="h-5 w-5 text-amber-600 mr-2" />
+                        <div>
+                          <p className="text-amber-700 font-medium">
+                            {batch.daysRemaining} days remaining
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Incubation Progress Bar */}
+                      <div className="space-y-2 bg-gradient-to-r from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200 shadow-sm">
+                        <div className="flex justify-between items-center mb-1">
+                          <h4 className="font-medium text-amber-800">Incubation Timeline</h4>
+                          <div className="text-amber-700 text-sm font-medium bg-white px-2 py-1 rounded-full border border-amber-200 shadow-sm">
+                            Day {(() => {
+                              const speciesData = {
+                                "Chicken": { days: 21 },
+                                "Duck": { days: 28 },
+                                "Goose": { days: 30 },
+                                "Turkey": { days: 28 },
+                                "Quail": { days: 18 }
+                              };
+                              const totalDays = speciesData[batch.species]?.days || 21;
+                              return totalDays - batch.daysRemaining + 1;
+                            })()} of {(() => {
+                              const speciesData = {
+                                "Chicken": { days: 21 },
+                                "Duck": { days: 28 },
+                                "Goose": { days: 30 },
+                                "Turkey": { days: 28 },
+                                "Quail": { days: 18 }
+                              };
+                              return speciesData[batch.species]?.days || 21;
+                            })()}
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center text-xs text-amber-700 px-1">
+                          <div className="flex flex-col items-center">
+                            <div className="w-2 h-2 rounded-full bg-amber-400 mb-1"></div>
+                            <span>Start</span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="w-2 h-2 rounded-full bg-amber-500 mb-1"></div>
+                            <span>Turning</span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="w-2 h-2 rounded-full bg-amber-600 mb-1"></div>
+                            <span>Lockdown</span>
+                          </div>
+                          <div className="flex flex-col items-center">
+                            <div className="w-2 h-2 rounded-full bg-amber-700 mb-1"></div>
+                            <span>Hatch</span>
+                          </div>
+                        </div>
+                        
+                        <div className="relative h-5 bg-white rounded-full overflow-hidden shadow-inner border border-amber-200">
+                          {/* Calculate progress percentage based on species and days */}
+                          {(() => {
+                            const speciesData = {
+                              "Chicken": { days: 21, turnUntil: 18 },
+                              "Duck": { days: 28, turnUntil: 25 },
+                              "Goose": { days: 30, turnUntil: 27 },
+                              "Turkey": { days: 28, turnUntil: 25 },
+                              "Quail": { days: 18, turnUntil: 15 }
+                            };
+                            
+                            const totalDays = speciesData[batch.species]?.days || 21;
+                            const turnUntilDay = speciesData[batch.species]?.turnUntil || 18;
+                            const daysElapsed = totalDays - batch.daysRemaining;
+                            const progress = Math.min(100, Math.max(0, (daysElapsed / totalDays) * 100));
+                            
+                            // Calculate milestone positions
+                            const turnUntilPosition = (turnUntilDay / totalDays) * 100;
+                            const lockdownPosition = ((totalDays - 3) / totalDays) * 100;
+                            
+                            return (
+                              <>
+                                {/* Main progress bar with gradient based on phase */}
+                                <div 
+                                  className={`absolute left-0 top-0 h-full transition-all duration-500 ease-out ${progress < turnUntilPosition ? 'bg-gradient-to-r from-amber-400 to-amber-500' : progress < lockdownPosition ? 'bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-gradient-to-r from-amber-600 to-amber-700'}`}
+                                  style={{ width: `${progress}%` }}
+                                ></div>
+                                
+                                {/* Milestone markers with tooltips */}
+                                <div className="absolute top-0 h-full w-full">
+                                  {/* Turning phase end marker */}
+                                  <div className="group relative">
+                                    <div 
+                                      className="absolute top-0 h-full border-l-2 border-amber-600 z-10" 
+                                      style={{ left: `${turnUntilPosition}%` }}
+                                    ></div>
+                                    <div 
+                                      className="absolute bottom-full mb-1 left-0 transform -translate-x-1/2 hidden group-hover:block bg-amber-600 text-white text-xs py-1 px-2 rounded pointer-events-none whitespace-nowrap z-20"
+                                      style={{ left: `${turnUntilPosition}%` }}
+                                    >
+                                      Stop turning on day {turnUntilDay}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Lockdown marker */}
+                                  <div className="group relative">
+                                    <div 
+                                      className="absolute top-0 h-full border-l-2 border-amber-800 z-10" 
+                                      style={{ left: `${lockdownPosition}%` }}
+                                    ></div>
+                                    <div 
+                                      className="absolute bottom-full mb-1 left-0 transform -translate-x-1/2 hidden group-hover:block bg-amber-800 text-white text-xs py-1 px-2 rounded pointer-events-none whitespace-nowrap z-20"
+                                      style={{ left: `${lockdownPosition}%` }}
+                                    >
+                                      Lockdown on day {totalDays - 3}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Current day indicator with pulsing effect */}
+                                <div 
+                                  className="absolute top-0 h-full z-10" 
+                                  style={{ left: `${progress}%` }}
+                                >
+                                  <div className="absolute top-1/2 transform -translate-y-1/2 -ml-2.5">
+                                    <div className="h-5 w-5 bg-white border-2 border-amber-600 rounded-full shadow-md flex items-center justify-center animate-pulse">
+                                      <div className="h-2 w-2 bg-amber-600 rounded-full"></div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                        
+                        {/* Handling instructions based on current phase */}
+                        {(() => {
+                          const speciesData = {
+                            "Chicken": { days: 21, turnUntil: 18 },
+                            "Duck": { days: 28, turnUntil: 25 },
+                            "Goose": { days: 30, turnUntil: 27 },
+                            "Turkey": { days: 28, turnUntil: 25 },
+                            "Quail": { days: 18, turnUntil: 15 }
+                          };
+                          
+                          const totalDays = speciesData[batch.species]?.days || 21;
+                          const turnUntilDay = speciesData[batch.species]?.turnUntil || 18;
+                          const daysElapsed = totalDays - batch.daysRemaining;
+                          
+                          let instructions = "";
+                          let bgColor = "bg-amber-50";
+                          let textColor = "text-amber-800";
+                          let borderColor = "border-amber-200";
+                          
+                          if (daysElapsed < 7) {
+                            // First week
+                            instructions = "Turn eggs 3-5 times daily. Maintain temperature and humidity carefully during this critical period.";
+                          } else if (daysElapsed < turnUntilDay) {
+                            // Middle period
+                            instructions = "Continue turning eggs 3 times daily. Candle eggs to check development and remove any clear (infertile) eggs.";
+                          } else if (daysElapsed < totalDays - 1) {
+                            // Lockdown period
+                            instructions = "LOCKDOWN PHASE: Stop turning eggs. Increase humidity to 65-70%. Minimize opening incubator.";
+                            bgColor = "bg-amber-100";
+                            borderColor = "border-amber-400";
+                            textColor = "text-amber-900";
+                          } else {
+                            // Hatching imminent
+                            instructions = "HATCHING IMMINENT: Eggs may begin pipping. Do not open incubator. Maintain high humidity.";
+                            bgColor = "bg-amber-200";
+                            borderColor = "border-amber-500";
+                            textColor = "text-amber-900 font-medium";
+                          }
+                          
+                          return (
+                            <div className={`mt-2 p-2 rounded-lg ${bgColor} ${textColor} text-sm border ${borderColor}`}>
+                              <p>{instructions}</p>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   )}

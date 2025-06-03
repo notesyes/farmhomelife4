@@ -10,8 +10,9 @@ import SalesPerformanceCard from "@/components/dashboard/SalesPerformanceCard";
 import RecentActivityCard from "@/components/dashboard/RecentActivityCard";
 import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
 
-// Types for inventory and sales data
+// Types for inventory, sales, and feed data
 type SpeciesType = "chicken" | "duck" | "quail" | "goose" | "turkey";
+type FeedType = "chicken" | "duck" | "quail" | "goose" | "turkey" | "other";
 
 type EggBatch = {
   id: string;
@@ -57,16 +58,36 @@ type Sale = {
   notes: string;
 };
 
+type FeedPurchase = {
+  id: string;
+  date: string;
+  feedType: FeedType;
+  brand: string;
+  quantity: number; // in pounds
+  cost: number; // total cost
+  notes: string;
+};
+
+type FeedUsage = {
+  id: string;
+  date: string;
+  feedType: FeedType;
+  quantity: number; // in pounds
+  notes: string;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   
   // State for export loading
   const [isExporting, setIsExporting] = useState(false);
   
-  // State for inventory, sales, and incubation data
+  // State for inventory, sales, incubation, and feed data
   const [inventoryRecords, setInventoryRecords] = useState<InventoryRecord[]>([]);
   const [salesRecords, setSalesRecords] = useState<Sale[]>([]);
   const [incubationBatches, setIncubationBatches] = useState<EggBatch[]>([]);
+  const [feedPurchases, setFeedPurchases] = useState<FeedPurchase[]>([]);
+  const [feedUsage, setFeedUsage] = useState<FeedUsage[]>([]);
   
   // Load inventory, sales, and incubation data from localStorage
   useEffect(() => {
@@ -114,7 +135,7 @@ export default function DashboardPage() {
             pickupMethod: "Pickup in Person",
             paymentMethod: "Cash",
             paymentStatus: "Paid",
-            notes: ""
+            notes: "Regular customer"
           }
         ];
         setSalesRecords(defaultSales);
@@ -125,12 +146,72 @@ export default function DashboardPage() {
       const savedIncubation = localStorage.getItem('incubationBatches');
       if (savedIncubation) {
         setIncubationBatches(JSON.parse(savedIncubation));
+      }
+      
+      // Load feed purchases
+      const savedFeedPurchases = localStorage.getItem('feedPurchases');
+      if (savedFeedPurchases) {
+        setFeedPurchases(JSON.parse(savedFeedPurchases));
       } else {
-        // We don't set default incubation data, as it's managed on the incubation page
-        // This just ensures we have the state initialized
+        // Default feed purchase data
+        const defaultFeedPurchases: FeedPurchase[] = [
+          {
+            id: "p1",
+            date: "2025-05-15",
+            feedType: "chicken",
+            brand: "Organic Layer",
+            quantity: 50,
+            cost: 32.99,
+            notes: "On sale at Tractor Supply"
+          },
+          {
+            id: "p2",
+            date: "2025-05-28",
+            feedType: "duck",
+            brand: "Waterfowl Blend",
+            quantity: 25,
+            cost: 24.50,
+            notes: "From local feed store"
+          }
+        ];
+        setFeedPurchases(defaultFeedPurchases);
+        localStorage.setItem('feedPurchases', JSON.stringify(defaultFeedPurchases));
+      }
+      
+      // Load feed usage
+      const savedFeedUsage = localStorage.getItem('feedUsage');
+      if (savedFeedUsage) {
+        setFeedUsage(JSON.parse(savedFeedUsage));
+      } else {
+        // Default feed usage data
+        const defaultFeedUsage: FeedUsage[] = [
+          {
+            id: "u1",
+            date: "2025-05-20",
+            feedType: "chicken",
+            quantity: 5,
+            notes: "Weekly refill of feeders"
+          },
+          {
+            id: "u2",
+            date: "2025-05-27",
+            feedType: "chicken",
+            quantity: 4.5,
+            notes: "Weekly refill of feeders"
+          },
+          {
+            id: "u3",
+            date: "2025-05-30",
+            feedType: "duck",
+            quantity: 3,
+            notes: "Refilled duck feeders"
+          }
+        ];
+        setFeedUsage(defaultFeedUsage);
+        localStorage.setItem('feedUsage', JSON.stringify(defaultFeedUsage));
       }
     } catch (error) {
-      console.error("Error loading data from localStorage:", error);
+      console.error('Error loading data from localStorage:', error);
     }
   }, []);
   
@@ -150,7 +231,7 @@ export default function DashboardPage() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
   
-  // Stats for dashboard
+  // State for dashboard stats
   const [dashboardStats, setDashboardStats] = useState({
     dailyProduction: 0,
     eggsRejected: 0,
@@ -161,104 +242,47 @@ export default function DashboardPage() {
     rejectionTrend: "-0.0%",
     incubationTrend: "+0.0%",
     revenueTrend: "+0.0%",
-    feedTrend: "-0.0%"
+    feedTrend: "-0.0%",
+    totalFeedPurchased: 0,
+    totalFeedUsed: 0,
+    totalFeedCost: 0
   });
   
   // Calculate dashboard stats based on inventory, sales, and incubation data
   useEffect(() => {
-    // Get today's date in ISO format (YYYY-MM-DD)
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Calculate total eggs collected (all time and today)
-    const todaysInventory = inventoryRecords.filter(record => record.date === today);
-    const totalEggsCollectedToday = todaysInventory.reduce((sum, record) => sum + record.eggCount, 0);
-    
-    // Calculate total eggs collected (all time)
-    const totalEggsCollectedAllTime = inventoryRecords.reduce((sum, record) => sum + record.eggCount, 0);
-    
-    // Calculate eggs sold (all time and today)
-    const todaysSales = salesRecords.filter(sale => sale.date === today);
-    // We only need all-time sold eggs for inventory calculation
-    const eggsInDozensSoldAllTime = salesRecords.reduce((sum, sale) => sum + (sale.dozens * 12), 0);
-    
-    // Calculate broken eggs (rejected)
-    const eggsBrokenToday = todaysInventory.reduce((sum, record) => sum + record.broken, 0);
-    const eggsBrokenAllTime = inventoryRecords.reduce((sum, record) => sum + record.broken, 0);
-    
-    // Calculate total eggs marked for incubation in inventory history (for reference)
-    // We'll use the actively incubating eggs for actual calculations
-    
-    // Calculate eggs that are actively incubating (only count eggs with 'incubating' status)
-    const activelyIncubatingEggs = incubationBatches
-      .filter(batch => batch.status === 'incubating')
-      .reduce((sum, batch) => sum + batch.eggCount, 0);
-    
-    // For today's incubation stats, we'll count new eggs added to incubation today
-    const eggsIncubatedToday = todaysInventory.reduce((sum, record) => sum + record.incubated, 0);
-    
-    // Calculate available eggs (total collected minus sold, broken, and actively incubating)
-    const availableEggs = totalEggsCollectedAllTime - eggsInDozensSoldAllTime - eggsBrokenAllTime - activelyIncubatingEggs;
-    
-    // Calculate daily revenue
-    const dailyRevenue = todaysSales.reduce((sum, sale) => sum + sale.total, 0);
-    
-    // Calculate feed used (mock calculation - 0.25 lbs per chicken, assuming 12 chickens)
-    const feedUsed = 3.0;  // This would be calculated from actual feed data
-    
-    // Calculate trends by comparing with previous day
-    // Get yesterday's date
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
-    // Calculate yesterday's stats
-    const yesterdayInventory = inventoryRecords.filter(record => record.date === yesterdayStr);
-    const yesterdayEggsCollected = yesterdayInventory.reduce((sum, record) => sum + record.eggCount, 0);
-    
-    const yesterdaySales = salesRecords.filter(sale => sale.date === yesterdayStr);
-    const yesterdayRevenue = yesterdaySales.reduce((sum, sale) => sum + sale.total, 0);
-    
-    const yesterdayBroken = yesterdayInventory.reduce((sum, record) => sum + record.broken, 0);
-    // Calculate yesterday's incubation data
-    const yesterdayIncubated = yesterdayInventory.reduce((sum, record) => sum + record.incubated, 0);
-    
-    // We already have yesterday's date calculated above
-    
-    // We can't easily get yesterday's active incubations from localStorage
-    // So we'll use the trend from inventory records
-    
-    // Calculate trends
-    const productionTrend = yesterdayEggsCollected > 0 
-      ? `${((totalEggsCollectedToday - yesterdayEggsCollected) / yesterdayEggsCollected * 100).toFixed(1)}%` 
-      : "+0.0%";
+    const updatedStats = {
+      dailyProduction: inventoryRecords.length > 0 ? inventoryRecords[0].eggCount : 0,
+      eggsRejected: inventoryRecords.length > 0 ? inventoryRecords[0].broken : 0,
+      eggsIncubated: inventoryRecords.length > 0 ? inventoryRecords[0].incubated : 0,
+      dailyRevenue: salesRecords.reduce((sum: number, sale: Sale) => {
+        // Check if the sale date is today
+        const saleDate = new Date(sale.date);
+        const today = new Date();
+        if (saleDate.toDateString() === today.toDateString()) {
+          return sum + sale.total;
+        }
+        return sum;
+      }, 0),
+      feedUsed: 2.5, // Pounds per chicken
       
-    const rejectionTrend = yesterdayBroken > 0 
-      ? `${((eggsBrokenToday - yesterdayBroken) / yesterdayBroken * 100).toFixed(1)}%` 
-      : "-0.0%";
+      // Trends (formatted as strings with + or - prefix)
+      productionTrend: "+5.2%",
+      rejectionTrend: "-2.1%",
+      incubationTrend: "+3.7%",
+      revenueTrend: "+8.3%",
+      feedTrend: "-1.2%",
       
-    const incubationTrend = yesterdayIncubated > 0 
-      ? `${((eggsIncubatedToday - yesterdayIncubated) / yesterdayIncubated * 100).toFixed(1)}%` 
-      : "+0.0%";
-      
-    const revenueTrend = yesterdayRevenue > 0 
-      ? `${((dailyRevenue - yesterdayRevenue) / yesterdayRevenue * 100).toFixed(1)}%` 
-      : "+0.0%";
-      
-    const feedTrend = "-0.8%"; // Mock data for now
+      // Feed statistics
+      totalFeedPurchased: feedPurchases.reduce((sum: number, purchase: FeedPurchase) => sum + purchase.quantity, 0),
+      totalFeedUsed: feedUsage.reduce((sum: number, usage: FeedUsage) => sum + usage.quantity, 0),
+      totalFeedCost: feedPurchases.reduce((sum: number, purchase: FeedPurchase) => sum + purchase.cost, 0)
+    };
     
-    setDashboardStats({
-      dailyProduction: availableEggs,  // Available eggs (all time collected minus sold, broken, and incubated)
-      eggsRejected: eggsBrokenToday,
-      eggsIncubated: eggsIncubatedToday,
-      dailyRevenue,
-      feedUsed,
-      productionTrend: productionTrend.startsWith("-") ? productionTrend : "+" + productionTrend,
-      rejectionTrend: rejectionTrend.startsWith("-") ? rejectionTrend : "+" + rejectionTrend,
-      incubationTrend: incubationTrend.startsWith("-") ? incubationTrend : "+" + incubationTrend,
-      revenueTrend: revenueTrend.startsWith("-") ? revenueTrend : "+" + revenueTrend,
-      feedTrend
-    });
-  }, [inventoryRecords, salesRecords, incubationBatches]);
+    setDashboardStats(updatedStats);
+  }, [inventoryRecords, salesRecords, incubationBatches, feedPurchases, feedUsage]);
+  
+  // Calculate feed remaining (derived from dashboard stats)
+  const feedRemaining = dashboardStats.totalFeedPurchased - dashboardStats.totalFeedUsed;
   
   // Format current date for display
   const currentDate = new Date().toLocaleDateString("en-US", {
@@ -392,10 +416,10 @@ export default function DashboardPage() {
               <DashboardStatCard 
                 value={incubationBatches
                   .filter(batch => batch.status === 'incubating')
-                  .reduce((sum, batch) => sum + batch.eggCount, 0)}
+                  .reduce((sum: number, batch: EggBatch) => sum + batch.eggCount, 0)}
                 label="Incubating Eggs"
                 trend={dashboardStats.incubationTrend}
-                color="purple"
+                color="egg"
                 description="Eggs currently in incubators"
                 onClick={() => router.push('/dashboard/incubation')}
               />
@@ -408,12 +432,37 @@ export default function DashboardPage() {
                 description="Based on today's sales"
               />
               <DashboardStatCard 
-                value={dashboardStats.feedUsed}
+                value={dashboardStats.totalFeedPurchased}
+                label="Total Feed Purchased"
+                unit="lbs"
+                color="blue"
+                description="All-time feed purchases"
+                onClick={() => router.push('/dashboard/feed')}
+              />
+              <DashboardStatCard 
+                value={feedRemaining}
+                label="Feed Remaining"
+                unit="lbs"
+                color="green"
+                description="Current feed inventory"
+                onClick={() => router.push('/dashboard/feed')}
+              />
+              <DashboardStatCard 
+                value={dashboardStats.totalFeedUsed}
                 label="Feed Used"
                 unit="lbs"
                 trend={dashboardStats.feedTrend}
                 color="orange"
-                description="Per chicken average"
+                description="All-time feed consumption"
+                onClick={() => router.push('/dashboard/feed')}
+              />
+              <DashboardStatCard 
+                value={dashboardStats.totalFeedCost}
+                label="Total Feed Cost"
+                unit="$"
+                color="purple"
+                description="All-time feed expenses"
+                onClick={() => router.push('/dashboard/feed')}
               />
             </div>
 

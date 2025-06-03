@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incubation Page Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <h1 class="text-2xl font-bold text-amber-800 mb-6">Incubation Page Preview</h1>
+    <p class="mb-4 text-gray-700">This is a static preview of how the incubation page should look with the new progress bar feature.</p>
+    
+    <!-- Example Batch Card -->
+    <div class="bg-white rounded-xl shadow-md border border-amber-200 overflow-hidden mb-6">
+        <div class="p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-semibold text-amber-700">Spring Chickens 2025</h3>
+                    <p class="text-amber-600">Chicken • 24 eggs</p>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <p class="text-sm text-amber-600">Start Date</p>
+                    <p class="font-medium text-amber-900">May 13, 2025</p>
+                </div>
+                <div>
+                    <p class="text-sm text-amber-600">Expected Hatch</p>
+                    <p class="font-medium text-amber-900">June 3, 2025</p>
+                </div>
+                <div>
+                    <p class="text-sm text-amber-600">Temperature</p>
+                    <p class="font-medium text-amber-900">99.5°F</p>
+                </div>
+                <div>
+                    <p class="text-sm text-amber-600">Humidity</p>
+                    <p class="font-medium text-amber-900">55%</p>
+                </div>
+            </div>
+            
+            <div class="mt-4 space-y-3">
+                <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 text-amber-600 mr-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    <div>
+                        <p class="text-amber-700 font-medium">
+                            7 days remaining
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Incubation Progress Bar -->
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs text-amber-700">
+                        <span>Day 1</span>
+                        <span>Turning Phase</span>
+                        <span>Lockdown</span>
+                        <span>Hatch</span>
+                    </div>
+                    <div class="relative h-4 bg-gray-200 rounded-full overflow-hidden">
+                        <!-- Main progress bar - 67% complete (14 days of 21) -->
+                        <div class="absolute left-0 top-0 h-full bg-gradient-to-r from-amber-500 to-amber-400" style="width: 67%"></div>
+                        
+                        <!-- Milestone markers -->
+                        <div class="absolute top-0 h-full w-full">
+                            <!-- Turning phase end marker (day 18 of 21 = 85.7%) -->
+                            <div class="absolute top-0 h-full border-l-2 border-amber-600" style="left: 85.7%"></div>
+                            
+                            <!-- Lockdown marker (day 18 of 21 = 85.7%) -->
+                            <div class="absolute top-0 h-full border-l-2 border-amber-800" style="left: 85.7%"></div>
+                        </div>
+                        
+                        <!-- Current day indicator (day 14 of 21 = 67%) -->
+                        <div class="absolute top-0 h-full" style="left: 67%">
+                            <div class="relative h-full">
+                                <div class="absolute top-0 h-full">
+                                    <div class="absolute top-0 h-4 w-4 bg-white border-2 border-amber-600 rounded-full -ml-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Handling instructions - middle period -->
+                    <div class="mt-2 p-2 rounded-lg bg-amber-50 text-amber-800 text-sm border border-amber-200">
+                        <p>Continue turning eggs 3 times daily. Candle eggs to check development and remove any clear (infertile) eggs.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Example Batch Card - Lockdown Phase -->
+    <div class="bg-white rounded-xl shadow-md border border-amber-200 overflow-hidden mb-6">
+        <div class="p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-semibold text-amber-700">Duck Batch #3</h3>
+                    <p class="text-amber-600">Duck • 12 eggs</p>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <p class="text-sm text-amber-600">Start Date</p>
+                    <p class="font-medium text-amber-900">May 8, 2025</p>
+                </div>
+                <div>
+                    <p class="text-sm text-amber-600">Expected Hatch</p>
+                    <p class="font-medium text-amber-900">June 5, 2025</p>
+                </div>
+                <div>
+                    <p class="text-sm text-amber-600">Temperature</p>
+                    <p class="font-medium text-amber-900">99.5°F</p>
+                </div>
+                <div>
+                    <p class="text-sm text-amber-600">Humidity</p>
+                    <p class="font-medium text-amber-900">65%</p>
+                </div>
+            </div>
+            
+            <div class="mt-4 space-y-3">
+                <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 text-amber-600 mr-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    <div>
+                        <p class="text-amber-700 font-medium">
+                            2 days remaining
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Incubation Progress Bar -->
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs text-amber-700">
+                        <span>Day 1</span>
+                        <span>Turning Phase</span>
+                        <span>Lockdown</span>
+                        <span>Hatch</span>
+                    </div>
+                    <div class="relative h-4 bg-gray-200 rounded-full overflow-hidden">
+                        <!-- Main progress bar - 93% complete (26 days of 28) -->
+                        <div class="absolute left-0 top-0 h-full bg-gradient-to-r from-amber-500 to-amber-400" style="width: 93%"></div>
+                        
+                        <!-- Milestone markers -->
+                        <div class="absolute top-0 h-full w-full">
+                            <!-- Turning phase end marker (day 25 of 28 = 89.3%) -->
+                            <div class="absolute top-0 h-full border-l-2 border-amber-600" style="left: 89.3%"></div>
+                            
+                            <!-- Lockdown marker (day 25 of 28 = 89.3%) -->
+                            <div class="absolute top-0 h-full border-l-2 border-amber-800" style="left: 89.3%"></div>
+                        </div>
+                        
+                        <!-- Current day indicator (day 26 of 28 = 93%) -->
+                        <div class="absolute top-0 h-full" style="left: 93%">
+                            <div class="relative h-full">
+                                <div class="absolute top-0 h-full">
+                                    <div class="absolute top-0 h-4 w-4 bg-white border-2 border-amber-600 rounded-full -ml-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Handling instructions - lockdown phase -->
+                    <div class="mt-2 p-2 rounded-lg bg-amber-100 text-amber-900 text-sm border border-amber-400">
+                        <p>LOCKDOWN PHASE: Stop turning eggs. Increase humidity to 65-70%. Minimize opening incubator.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Example Batch Card - Hatching Imminent -->
+    <div class="bg-white rounded-xl shadow-md border border-amber-200 overflow-hidden">
+        <div class="p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="text-lg font-semibold text-amber-700">Quail Batch #5</h3>
+                    <p class="text-amber-600">Quail • 18 eggs</p>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <p class="text-sm text-amber-600">Start Date</p>
+                    <p class="font-medium text-amber-900">May 16, 2025</p>
+                </div>
+                <div>
+                    <p class="text-sm text-amber-600">Expected Hatch</p>
+                    <p class="font-medium text-amber-900">June 3, 2025</p>
+                </div>
+                <div>
+                    <p class="text-sm text-amber-600">Temperature</p>
+                    <p class="font-medium text-amber-900">99.5°F</p>
+                </div>
+                <div>
+                    <p class="text-sm text-amber-600">Humidity</p>
+                    <p class="font-medium text-amber-900">70%</p>
+                </div>
+            </div>
+            
+            <div class="mt-4 space-y-3">
+                <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5 text-amber-600 mr-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    <div>
+                        <p class="text-amber-700 font-medium">
+                            0 days remaining
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Incubation Progress Bar -->
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs text-amber-700">
+                        <span>Day 1</span>
+                        <span>Turning Phase</span>
+                        <span>Lockdown</span>
+                        <span>Hatch</span>
+                    </div>
+                    <div class="relative h-4 bg-gray-200 rounded-full overflow-hidden">
+                        <!-- Main progress bar - 100% complete -->
+                        <div class="absolute left-0 top-0 h-full bg-gradient-to-r from-amber-500 to-amber-400" style="width: 100%"></div>
+                        
+                        <!-- Milestone markers -->
+                        <div class="absolute top-0 h-full w-full">
+                            <!-- Turning phase end marker (day 15 of 18 = 83.3%) -->
+                            <div class="absolute top-0 h-full border-l-2 border-amber-600" style="left: 83.3%"></div>
+                            
+                            <!-- Lockdown marker (day 15 of 18 = 83.3%) -->
+                            <div class="absolute top-0 h-full border-l-2 border-amber-800" style="left: 83.3%"></div>
+                        </div>
+                        
+                        <!-- Current day indicator (day 18 of 18 = 100%) -->
+                        <div class="absolute top-0 h-full" style="left: 100%">
+                            <div class="relative h-full">
+                                <div class="absolute top-0 h-full">
+                                    <div class="absolute top-0 h-4 w-4 bg-white border-2 border-amber-600 rounded-full -ml-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Handling instructions - hatching imminent -->
+                    <div class="mt-2 p-2 rounded-lg bg-amber-200 text-amber-900 font-medium text-sm border border-amber-500">
+                        <p>HATCHING IMMINENT: Eggs may begin pipping. Do not open incubator. Maintain high humidity.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

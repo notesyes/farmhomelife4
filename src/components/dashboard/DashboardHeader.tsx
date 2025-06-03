@@ -5,13 +5,35 @@ import Link from "next/link";
 
 const DashboardHeader: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const paymentDropdownRef = useRef<HTMLDivElement>(null);
   
-  // Close dropdown when clicking outside
+  // Mock payment data - in a real app, this would come from Stripe API
+  const [paymentData, setPaymentData] = useState({
+    currentPlan: "Premium Farm",
+    nextBillingDate: "July 3, 2025",
+    amount: "$29.99",
+    lastPayment: {
+      date: "June 3, 2025",
+      amount: "$29.99",
+      status: "Paid"
+    },
+    paymentMethod: {
+      type: "Credit Card",
+      last4: "4242",
+      expiry: "12/26"
+    }
+  });
+  
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
+      }
+      if (paymentDropdownRef.current && !paymentDropdownRef.current.contains(event.target as Node)) {
+        setIsPaymentDropdownOpen(false);
       }
     };
     
@@ -23,6 +45,10 @@ const DashboardHeader: React.FC = () => {
   
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
+  };
+  
+  const togglePaymentDropdown = () => {
+    setIsPaymentDropdownOpen(!isPaymentDropdownOpen);
   };
   return (
     <header className="bg-white border-b border-gray-200 shadow-sm">
@@ -53,6 +79,72 @@ const DashboardHeader: React.FC = () => {
 
           {/* Right side icons */}
           <div className="flex items-center space-x-4">
+            {/* Payment Information */}
+            <div className="relative" ref={paymentDropdownRef}>
+              <button 
+                className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 relative"
+                onClick={togglePaymentDropdown}
+                aria-label="View payment information"
+              >
+                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-500 rounded-full">$</span>
+              </button>
+              
+              {/* Payment Dropdown */}
+              {isPaymentDropdownOpen && (
+                <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10 p-4">
+                  <div className="border-b border-gray-200 pb-3 mb-3">
+                    <h3 className="text-lg font-medium text-gray-900">Subscription Details</h3>
+                    <p className="text-sm text-gray-500">Manage your payment information</p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-500">Current Plan:</span>
+                      <span className="text-sm font-semibold text-gray-900">{paymentData.currentPlan}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-500">Next Billing:</span>
+                      <span className="text-sm font-semibold text-gray-900">{paymentData.nextBillingDate}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-500">Amount:</span>
+                      <span className="text-sm font-semibold text-gray-900">{paymentData.amount}/month</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-500">Payment Method:</span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {paymentData.paymentMethod.type} ending in {paymentData.paymentMethod.last4}
+                      </span>
+                    </div>
+                    
+                    <div className="pt-2 border-t border-gray-200 mt-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium text-gray-500">Last Payment:</span>
+                        <span className="text-sm font-semibold text-green-600">
+                          {paymentData.lastPayment.amount} • {paymentData.lastPayment.date}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 flex justify-between">
+                    <Link href="/dashboard/billing" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
+                      Billing History
+                    </Link>
+                    <Link href="/dashboard/subscription" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">
+                      Manage Subscription
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+            
             {/* Notifications */}
             <button className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
               <span className="sr-only">View notifications</span>

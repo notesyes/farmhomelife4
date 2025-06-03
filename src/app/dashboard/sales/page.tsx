@@ -163,6 +163,7 @@ export default function SalesPage() {
   // Handle adding a new sale
   const handleAddSale = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Adding new sale...");
     
     if (newSale.customerId === "") {
       alert("Please select a customer");
@@ -188,7 +189,7 @@ export default function SalesPage() {
     }
     
     const saleTotal = calculateTotal();
-    const newSaleId = (sales.length + 1).toString();
+    const newSaleId = `sale-${Date.now()}`; // Use timestamp for unique ID
     
     // Add the new sale
     const sale: Sale = {
@@ -209,7 +210,9 @@ export default function SalesPage() {
       notes: newSale.notes
     };
     
-    setSales([sale, ...sales]);
+    // Update sales state with the new sale at the beginning of the array
+    setSales(prevSales => [sale, ...prevSales]);
+    console.log("Sale added:", sale);
     
     // Reset form
     setNewSale({
@@ -225,6 +228,9 @@ export default function SalesPage() {
       pickupTime: "",
       notes: ""
     });
+    
+    // Show confirmation
+    alert("Sale added successfully!");
   };
 
   // Handle editing a sale

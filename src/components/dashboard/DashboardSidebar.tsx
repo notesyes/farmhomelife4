@@ -8,6 +8,7 @@ const DashboardSidebar: React.FC = () => {
     { name: "Dashboard", href: "/dashboard", icon: "📊", current: true, canDelete: false },
     { name: "Incubation", href: "/dashboard/incubation", icon: "🐥", current: false, canDelete: false },
     { name: "Inventory", href: "/dashboard/inventory", icon: "📦", current: false, canDelete: true },
+    { name: "Feed", href: "/dashboard/feed", icon: "🌾", current: false, canDelete: false },
     { name: "Customers", href: "/dashboard/customers", icon: "👥", current: false, canDelete: false },
     { name: "Sales", href: "/dashboard/sales", icon: "💰", current: false, canDelete: false },
     { name: "Reports", href: "/dashboard/reports", icon: "📈", current: false, canDelete: true },
