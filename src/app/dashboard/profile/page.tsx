@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
@@ -16,6 +16,9 @@ export default function ProfilePage() {
     bio: "I've been running my small egg farm for over 5 years. Focused on organic, free-range egg production with sustainable practices.",
     profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
   });
+  
+  // File upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [isEditing, setIsEditing] = useState(false);
@@ -28,6 +31,31 @@ export default function ProfilePage() {
       ...prev,
       [name]: value
     }));
+  };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      // Create a preview URL for the selected image
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result;
+        if (result) {
+          setFormData(prev => ({
+            ...prev,
+            profileImage: result as string
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -75,13 +103,36 @@ export default function ProfilePage() {
               {/* Profile Header with Image */}
               <div className="bg-emerald-700 h-32 relative">
                 <div className="absolute bottom-0 left-8 transform translate-y-1/2">
-                  <div className="h-24 w-24 rounded-full border-4 border-white overflow-hidden bg-white">
+                  <div className="h-24 w-24 rounded-full border-4 border-white overflow-hidden bg-white relative group">
                     <img 
-                      src={userData.profileImage} 
+                      src={isEditing ? formData.profileImage : userData.profileImage} 
                       alt="Profile" 
                       className="h-full w-full object-cover"
                     />
+                    {isEditing && (
+                      <div 
+                        className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        onClick={triggerFileInput}
+                      >
+                        <svg className="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <input 
+                          type="file" 
+                          ref={fileInputRef}
+                          className="hidden" 
+                          accept="image/*"
+                          onChange={handleFileChange}
+                        />
+                      </div>
+                    )}
                   </div>
+                  {isEditing && (
+                    <div className="mt-2 text-xs text-white bg-emerald-600 rounded-full py-1 px-3 shadow-sm text-center">
+                      Hover to change photo
+                    </div>
+                  )}
                 </div>
               </div>
 
