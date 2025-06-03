@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface SearchContextType {
   searchQuery: string;
@@ -15,7 +15,7 @@ export interface SearchResult {
   id: string;
   title: string;
   description: string;
-  type: 'inventory' | 'sales' | 'feed' | 'incubation' | 'customer' | 'settings';
+  type: "inventory" | "sales" | "feed" | "incubation" | "customer" | "settings";
   url: string;
   date?: string;
 }
@@ -23,7 +23,7 @@ export interface SearchResult {
 const SearchContext = createContext<SearchContextType | undefined>(undefined);
 
 export function SearchProvider({ children }: { children: ReactNode }) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -35,19 +35,19 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     }
 
     setIsSearching(true);
-    
+
     // Get data from localStorage
     const searchableData = {
       inventory: getInventoryItems(),
       sales: getSalesData(),
       feed: getFeedData(),
       incubation: getIncubationData(),
-      customers: getCustomerData()
+      customers: getCustomerData(),
     };
-    
+
     // Perform the search
     const results: SearchResult[] = [];
-    
+
     // Search inventory
     searchableData.inventory.forEach((item: InventoryItem) => {
       if (matchesSearch(item, query)) {
@@ -55,13 +55,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           id: `inventory-${item.id}`,
           title: item.name,
           description: `Quantity: ${item.quantity} - ${item.category}`,
-          type: 'inventory',
-          url: '/dashboard/inventory',
-          date: new Date(item.lastUpdated).toLocaleDateString()
+          type: "inventory",
+          url: "/dashboard/inventory",
+          date: new Date(item.lastUpdated).toLocaleDateString(),
         });
       }
     });
-    
+
     // Search sales
     searchableData.sales.forEach((sale: SaleItem) => {
       if (matchesSearch(sale, query)) {
@@ -69,27 +69,29 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           id: `sale-${sale.id}`,
           title: `Sale #${sale.id}`,
           description: `${sale.customerName} - $${sale.amount.toFixed(2)}`,
-          type: 'sales',
-          url: '/dashboard/sales',
-          date: new Date(sale.date).toLocaleDateString()
+          type: "sales",
+          url: "/dashboard/sales",
+          date: new Date(sale.date).toLocaleDateString(),
         });
       }
     });
-    
+
     // Search feed
     searchableData.feed.forEach((feed: FeedItem) => {
       if (matchesSearch(feed, query)) {
         results.push({
           id: `feed-${feed.id}`,
           title: `${feed.brand} ${feed.type}`,
-          description: `Quantity: ${feed.quantity}lbs - $${feed.cost.toFixed(2)}`,
-          type: 'feed',
-          url: '/dashboard/feed',
-          date: new Date(feed.date).toLocaleDateString()
+          description: `Quantity: ${feed.quantity}lbs - $${feed.cost.toFixed(
+            2
+          )}`,
+          type: "feed",
+          url: "/dashboard/feed",
+          date: new Date(feed.date).toLocaleDateString(),
         });
       }
     });
-    
+
     // Search incubation
     searchableData.incubation.forEach((batch: IncubationBatch) => {
       if (matchesSearch(batch, query)) {
@@ -97,13 +99,13 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           id: `incubation-${batch.id}`,
           title: `${batch.species} - ${batch.breed}`,
           description: `${batch.quantity} eggs - Day ${batch.currentDay} of incubation`,
-          type: 'incubation',
-          url: '/dashboard/incubation',
-          date: new Date(batch.startDate).toLocaleDateString()
+          type: "incubation",
+          url: "/dashboard/incubation",
+          date: new Date(batch.startDate).toLocaleDateString(),
         });
       }
     });
-    
+
     // Search customers
     searchableData.customers.forEach((customer: Customer) => {
       if (matchesSearch(customer, query)) {
@@ -111,18 +113,18 @@ export function SearchProvider({ children }: { children: ReactNode }) {
           id: `customer-${customer.id}`,
           title: customer.name,
           description: `${customer.email} - ${customer.phone}`,
-          type: 'customer',
-          url: '/dashboard/customers',
+          type: "customer",
+          url: "/dashboard/customers",
         });
       }
     });
-    
+
     setSearchResults(results);
     setIsSearching(false);
   };
 
   const clearSearch = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setSearchResults([]);
   };
 
@@ -133,7 +135,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     quantity: number;
     category: string;
     lastUpdated: string;
-    [key: string]: any;
+    [key: string]: string | number;
   }
 
   interface SaleItem {
@@ -141,7 +143,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     customerName: string;
     amount: number;
     date: string;
-    [key: string]: any;
+    [key: string]: string | number;
   }
 
   interface FeedItem {
@@ -151,7 +153,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     quantity: number;
     cost: number;
     date: string;
-    [key: string]: any;
+    [key: string]: string | number;
   }
 
   interface IncubationBatch {
@@ -161,7 +163,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     quantity: number;
     startDate: string;
     currentDay: number;
-    [key: string]: any;
+    [key: string]: string | number;
   }
 
   interface Customer {
@@ -169,17 +171,20 @@ export function SearchProvider({ children }: { children: ReactNode }) {
     name: string;
     email: string;
     phone: string;
-    [key: string]: any;
+    [key: string]: string | number;
   }
 
   // Helper function to check if an object matches the search query
-  const matchesSearch = <T extends Record<string, any>>(obj: T, query: string): boolean => {
+  const matchesSearch = <T extends Record<string, string | number>>(
+    obj: T,
+    query: string
+  ): boolean => {
     const lowerQuery = query.toLowerCase();
-    return Object.values(obj).some(value => {
-      if (typeof value === 'string') {
+    return Object.values(obj).some((value) => {
+      if (typeof value === "string") {
         return value.toLowerCase().includes(lowerQuery);
       }
-      if (typeof value === 'number') {
+      if (typeof value === "number") {
         return value.toString().includes(lowerQuery);
       }
       return false;
@@ -189,63 +194,63 @@ export function SearchProvider({ children }: { children: ReactNode }) {
   // Helper functions to get data from localStorage
   const getInventoryItems = () => {
     try {
-      const items = localStorage.getItem('inventoryItems');
+      const items = localStorage.getItem("inventoryItems");
       return items ? JSON.parse(items) : [];
     } catch (error) {
-      console.error('Error retrieving inventory items:', error);
+      console.error("Error retrieving inventory items:", error);
       return [];
     }
   };
 
   const getSalesData = () => {
     try {
-      const sales = localStorage.getItem('sales');
+      const sales = localStorage.getItem("sales");
       return sales ? JSON.parse(sales) : [];
     } catch (error) {
-      console.error('Error retrieving sales data:', error);
+      console.error("Error retrieving sales data:", error);
       return [];
     }
   };
 
   const getFeedData = () => {
     try {
-      const feedPurchases = localStorage.getItem('feedPurchases');
+      const feedPurchases = localStorage.getItem("feedPurchases");
       return feedPurchases ? JSON.parse(feedPurchases) : [];
     } catch (error) {
-      console.error('Error retrieving feed data:', error);
+      console.error("Error retrieving feed data:", error);
       return [];
     }
   };
 
   const getIncubationData = () => {
     try {
-      const batches = localStorage.getItem('incubationBatches');
+      const batches = localStorage.getItem("incubationBatches");
       return batches ? JSON.parse(batches) : [];
     } catch (error) {
-      console.error('Error retrieving incubation data:', error);
+      console.error("Error retrieving incubation data:", error);
       return [];
     }
   };
 
   const getCustomerData = () => {
     try {
-      const customers = localStorage.getItem('customers');
+      const customers = localStorage.getItem("customers");
       return customers ? JSON.parse(customers) : [];
     } catch (error) {
-      console.error('Error retrieving customer data:', error);
+      console.error("Error retrieving customer data:", error);
       return [];
     }
   };
 
   return (
-    <SearchContext.Provider 
-      value={{ 
-        searchQuery, 
-        setSearchQuery, 
-        searchResults, 
-        performSearch, 
-        isSearching, 
-        clearSearch 
+    <SearchContext.Provider
+      value={{
+        searchQuery,
+        setSearchQuery,
+        searchResults,
+        performSearch,
+        isSearching,
+        clearSearch,
       }}
     >
       {children}
@@ -256,7 +261,7 @@ export function SearchProvider({ children }: { children: ReactNode }) {
 export function useSearch() {
   const context = useContext(SearchContext);
   if (context === undefined) {
-    throw new Error('useSearch must be used within a SearchProvider');
+    throw new Error("useSearch must be used within a SearchProvider");
   }
   return context;
 }
