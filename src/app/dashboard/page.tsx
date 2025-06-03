@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
-import ProductionStatusCard from "@/components/dashboard/ProductionStatusCard";
 import QuickActionsCard from "@/components/dashboard/QuickActionsCard";
 import SalesSummaryCard from "@/components/dashboard/SalesSummaryCard";
 import SalesPerformanceCard from "@/components/dashboard/SalesPerformanceCard";
@@ -418,13 +417,7 @@ export default function DashboardPage() {
               />
             </div>
 
-            {/* Middle Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-              {/* Production Status */}
-              <div className="lg:col-span-3">
-                <ProductionStatusCard />
-              </div>
-            </div>
+            {/* Middle Section - Production Status Card removed */}
 
             {/* Quick Actions */}
             <div className="mb-6">

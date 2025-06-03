@@ -1,6 +1,9 @@
 import { QuickAction } from "@/types";
+import { useRouter } from "next/navigation";
 
 const QuickActionsCard: React.FC = () => {
+  const router = useRouter();
+  
   // Mock data for quick actions
   const quickActions: QuickAction[] = [
     {
@@ -26,6 +29,12 @@ const QuickActionsCard: React.FC = () => {
       label: "Health Check",
       icon: "🩺",
       color: "bg-red-500 hover:bg-red-600"
+    },
+    {
+      id: "generate-report",
+      label: "Generate Report",
+      icon: "📊",
+      color: "bg-purple-500 hover:bg-purple-600"
     }
   ];
 
@@ -37,6 +46,14 @@ const QuickActionsCard: React.FC = () => {
         {quickActions.map((action) => (
           <button
             key={action.id}
+            onClick={() => {
+              if (action.id === "generate-report") {
+                router.push("/dashboard/reports");
+              } else {
+                // Handle other actions (to be implemented)
+                alert(`${action.label} feature will be implemented soon!`);
+              }
+            }}
             className={`${action.color} text-white rounded-lg py-3 px-4 flex items-center justify-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${action.color.split(' ')[0]}`}
           >
             <span className="text-xl mr-2">{action.icon}</span>
