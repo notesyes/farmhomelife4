@@ -222,8 +222,8 @@ const PricingPage = () => {
             </div>
             
             <div>
-              <h3 className="text-lg font-medium text-gray-900">Do you offer discounts for educational institutions?</h3>
-              <p className="mt-2 text-gray-600">Yes, we offer special pricing for schools and educational institutions. Please contact our support team for more information.</p>
+              <h3 className="text-lg font-medium text-gray-900">Do you offer student discounts?</h3>
+              <p className="mt-2 text-gray-600">No, we do not offer a student discount at the moment, but please be on the lookout as we may introduce something in the future.</p>
             </div>
             
             <div>
