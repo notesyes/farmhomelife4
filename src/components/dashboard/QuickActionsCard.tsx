@@ -19,16 +19,16 @@ const QuickActionsCard: React.FC = () => {
       color: "bg-amber-500 hover:bg-amber-600"
     },
     {
-      id: "new-sale",
-      label: "New Sale",
-      icon: "💰",
-      color: "bg-green-500 hover:bg-green-600"
-    },
-    {
       id: "feed-stock",
       label: "Feed Stock",
       icon: "🌾",
       color: "bg-yellow-500 hover:bg-yellow-600"
+    },
+    {
+      id: "new-sale",
+      label: "New Sale",
+      icon: "💰",
+      color: "bg-green-500 hover:bg-green-600"
     },
     {
       id: "customers",
