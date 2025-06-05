@@ -63,18 +63,13 @@ export async function POST(req: NextRequest) {
       let actualSubscriptionId: string | null = null;
 
       // Defensively check for subscription property and its type
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (
-        invoice.hasOwnProperty("subscription") &&
-        (invoice as any).subscription !== null
-      ) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sub = (invoice as any).subscription;
+      if ("subscription" in invoice && invoice.subscription !== null) {
+        const sub = invoice.subscription;
         if (typeof sub === "string") {
           actualSubscriptionId = sub;
-        } else if (typeof sub === "object" && sub.id) {
+        } else if (typeof sub === "object" && sub && "id" in sub) {
           // It's an expanded Stripe.Subscription object
-          actualSubscriptionId = sub.id;
+          actualSubscriptionId = (sub as { id: string }).id;
         }
       }
       console.log(
@@ -92,18 +87,13 @@ export async function POST(req: NextRequest) {
       let actualSubscriptionId: string | null = null;
 
       // Defensively check for subscription property and its type
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (
-        invoice.hasOwnProperty("subscription") &&
-        (invoice as any).subscription !== null
-      ) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const sub = (invoice as any).subscription;
+      if ("subscription" in invoice && invoice.subscription !== null) {
+        const sub = invoice.subscription;
         if (typeof sub === "string") {
           actualSubscriptionId = sub;
-        } else if (typeof sub === "object" && sub.id) {
+        } else if (typeof sub === "object" && sub && "id" in sub) {
           // It's an expanded Stripe.Subscription object
-          actualSubscriptionId = sub.id;
+          actualSubscriptionId = (sub as { id: string }).id;
         }
       }
       console.log(
