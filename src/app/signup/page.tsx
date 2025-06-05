@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 
 export default function SignUpPage() {
@@ -16,8 +17,11 @@ export default function SignUpPage() {
   const [step, setStep] = useState(1); // Step 1: User info, Step 2: Subscription options
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
     if (step === 1) {
       // Move to subscription selection step
@@ -27,12 +31,32 @@ export default function SignUpPage() {
     
     setIsLoading(true);
     
-    // Simulate registration delay
-    setTimeout(() => {
-      // In a real app, you would create the user account here and handle subscription
-      // For now, we'll just redirect to the dashboard
+    try {
+      // Register the user with Supabase
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            plan_type: selectedPlan
+          }
+        }
+      });
+      
+      if (signUpError) {
+        throw signUpError;
+      }
+      
+      // Successfully registered
       router.push("/dashboard");
-    }, 1000);
+      router.refresh();
+    } catch (err: unknown) {
+      console.error('Error signing up:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handlePlanSelect = (plan: string) => {
@@ -52,6 +76,12 @@ export default function SignUpPage() {
               {step === 1 ? "Create Your Account" : "Choose Your Plan"}
             </h1>
           </Link>
+          
+          {error && (
+            <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+              {error}
+            </div>
+          )}
           
           <form className="space-y-6" onSubmit={handleSubmit}>
             {step === 1 ? (

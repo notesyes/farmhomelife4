@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 
 export default function SignInPage() {
@@ -14,16 +15,32 @@ export default function SignInPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
     
-    // Simulate authentication delay
-    setTimeout(() => {
-      // In a real app, you would validate credentials here
-      // For now, we'll just redirect to the dashboard
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Successfully signed in
       router.push("/dashboard");
-    }, 1000);
+      router.refresh();
+    } catch (err: unknown) {
+      console.error('Error signing in:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sign in. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
   };
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
@@ -35,6 +52,12 @@ export default function SignInPage() {
               Sign In to Your Account
             </h1>
           </Link>
+          
+          {error && (
+            <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+              {error}
+            </div>
+          )}
           
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
